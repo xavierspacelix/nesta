@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/models/notification_type.dart';
 import 'package:nesta/core/providers/notification_provider.dart';
+import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/features/finance/models/fine_entry.dart';
 import 'package:nesta/features/finance/providers/fine_provider.dart';
 
@@ -41,17 +42,26 @@ class FineSettlementScreen extends ConsumerWidget {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ref.read(fineRepositoryProvider).markAsPaid(fineId);
-                      ref.read(notificationServiceProvider).notify(
-                        NotificationType.paymentReminder,
-                        'Denda Dibayar',
-                        'Denda $fineId telah dibayarkan',
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Denda berhasil dibayarkan')),
-                      );
-                      context.pop();
+                    onPressed: () async {
+                      try {
+                        await ref.read(fineRepositoryProvider).markAsPaid(fineId);
+                        ref.read(notificationServiceProvider).notify(
+                          NotificationType.paymentReminder,
+                          'Denda Dibayar',
+                          'Denda $fineId telah dibayarkan',
+                        );
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Denda berhasil dibayarkan')),
+                        );
+                        context.pop();
+                      } catch (e) {
+                        Log.e('FineSettlement', 'markAsPaid failed', e);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Gagal membayar denda')),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.check_circle_rounded, size: 20),
                     label: const Text('Tandai Sudah Dibayar',

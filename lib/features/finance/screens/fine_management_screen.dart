@@ -24,9 +24,9 @@ class FineManagementScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            await ref.refresh(currentFinesProvider.future);
-            await ref.refresh(fineHistoryProvider.future);
-            await ref.refresh(monthlyFineTotalProvider.future);
+            ref.refresh(currentFinesProvider);
+            ref.refresh(fineHistoryProvider);
+            ref.refresh(monthlyFineTotalProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

@@ -18,8 +18,8 @@ class DashboardScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            await ref.refresh(currentProfileProvider.future);
-            await ref.refresh(houseStatsProvider.future);
+            ref.refresh(currentProfileProvider);
+            ref.refresh(houseStatsProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

@@ -5,6 +5,8 @@ abstract class IMembersRepository {
   Future<List<HouseMember>> getMembers();
   Future<UserProfile?> getCurrentProfile();
   Future<void> updateAvatar(String avatarUrl);
+  Future<void> updateProfile({required String nickname, String? avatarUrl});
+  Future<String?> getHouseId(String userId);
 }
 
 class MockMembersRepository implements IMembersRepository {
@@ -37,5 +39,16 @@ class MockMembersRepository implements IMembersRepository {
   @override
   Future<void> updateAvatar(String avatarUrl) async {
     await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  @override
+  Future<void> updateProfile({required String nickname, String? avatarUrl}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  @override
+  Future<String?> getHouseId(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return null;
   }
 }

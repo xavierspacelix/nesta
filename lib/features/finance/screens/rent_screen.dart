@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,7 @@ class RentScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
         data: (records) => RefreshIndicator(
-          onRefresh: () => ref.refresh(rentHistoryProvider.future),
+          onRefresh: () { ref.refresh(rentHistoryProvider); return Future.value(); },
           child: records.isEmpty
               ? SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -90,9 +91,10 @@ class RentScreen extends ConsumerWidget {
     RentRecord record,
     String memberName,
   ) {
-    final payment = record.payments.firstWhere(
+    final payment = record.payments.firstWhereOrNull(
       (p) => p.memberName == memberName,
     );
+    if (payment == null) return;
     if (payment.isPaid) return;
 
     showModalBottomSheet(
@@ -193,7 +195,7 @@ class RentScreen extends ConsumerWidget {
                     Log.e('RentUpload', 'upload failed', e);
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal upload: $e')),
+                      const SnackBar(content: Text('Gagal upload bukti transfer')),
                     );
                   }
                 },

@@ -77,7 +77,7 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
+        const SnackBar(content: Text('Gagal menyimpan biaya')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -119,7 +119,7 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuat jadwal: $e')),
+        const SnackBar(content: Text('Gagal membuat jadwal')),
       );
     } finally {
       if (mounted) setState(() => _generating = false);

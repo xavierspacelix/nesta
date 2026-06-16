@@ -22,7 +22,7 @@ class MembersScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat anggota')),
         data: (members) => RefreshIndicator(
-          onRefresh: () => ref.refresh(membersProvider.future),
+          onRefresh: () { ref.refresh(membersProvider); return Future.value(); },
           child: ListView.builder(
             padding: const EdgeInsets.all(24),
             itemCount: members.length,
@@ -62,7 +62,7 @@ class _MemberCard extends StatelessWidget {
             backgroundImage: member.avatarUrl != null ? NetworkImage(member.avatarUrl!) : null,
             child: member.avatarUrl == null
                 ? Text(
-                    member.name[0],
+                    member.name.isNotEmpty ? member.name[0] : '?',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18,
                         color: colors[member.name.hashCode % colors.length]),
                   )

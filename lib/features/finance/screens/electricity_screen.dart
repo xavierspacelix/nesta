@@ -42,7 +42,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
         data: (purchases) => RefreshIndicator(
-          onRefresh: () => ref.refresh(electricityPurchasesProvider.future),
+          onRefresh: () { ref.refresh(electricityPurchasesProvider); return Future.value(); },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24),
@@ -203,10 +203,11 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           child: ElevatedButton(
             onPressed: _amountController.text.trim().isEmpty
                 ? null
-                : () {
+                : () async {
                     final amount = int.tryParse(_amountController.text.trim());
-                    if (amount != null && amount > 0) {
-                      ref
+                    if (amount == null || amount <= 0) return;
+                    try {
+                      await ref
                           .read(electricityRepositoryProvider)
                           .addPurchase(amount, currentUser, _proofPhoto);
                       ref.invalidate(electricityPurchasesProvider);
@@ -215,9 +216,18 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                         _showForm = false;
                         _proofPhoto = null;
                       });
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Pembelian listrik dicatat'),
+                        ),
+                      );
+                    } catch (e) {
+                      Log.e('Electricity', 'addPurchase failed', e);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Gagal menyimpan pembelian'),
                         ),
                       );
                     }

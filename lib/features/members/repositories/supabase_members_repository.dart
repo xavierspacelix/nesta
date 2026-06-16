@@ -137,4 +137,33 @@ class SupabaseMembersRepository implements IMembersRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<void> updateProfile({required String nickname, String? avatarUrl}) async {
+    try {
+      final updates = <String, dynamic>{'nickname': nickname};
+      if (avatarUrl != null) {
+        updates['avatar_url'] = avatarUrl;
+      }
+      await _client.from('profiles').update(updates).eq('id', _userId);
+    } catch (e) {
+      Log.e('MembersRepo', 'updateProfile failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> getHouseId(String userId) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('house_id')
+          .eq('id', userId)
+          .maybeSingle();
+      return response?['house_id'] as String?;
+    } catch (e) {
+      Log.e('MembersRepo', 'getHouseId failed', e);
+      return null;
+    }
+  }
 }

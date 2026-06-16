@@ -5,6 +5,7 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/models/notification_type.dart';
 import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/features/swap/models/swap_request.dart';
+import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/features/swap/providers/swap_provider.dart';
 
 class SwapApprovalScreen extends ConsumerWidget {
@@ -44,29 +45,47 @@ class SwapApprovalScreen extends ConsumerWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => _SwapRequestCard(
                   request: requests[index],
-                  onApprove: () {
-                    ref.read(swapRepositoryProvider).approveRequest(requests[index].id);
-                    ref.read(notificationServiceProvider).notify(
-                      NotificationType.swapApproved,
-                      'Tukar Jadwal Disetujui',
-                      '${requests[index].requesterName} — ${requests[index].targetMemberName}',
-                    );
-                    ref.invalidate(pendingSwapsProvider);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Permintaan disetujui')),
-                    );
+                  onApprove: () async {
+                    try {
+                      await ref.read(swapRepositoryProvider).approveRequest(requests[index].id);
+                      ref.read(notificationServiceProvider).notify(
+                        NotificationType.swapApproved,
+                        'Tukar Jadwal Disetujui',
+                        '${requests[index].requesterName} — ${requests[index].targetMemberName}',
+                      );
+                      ref.invalidate(pendingSwapsProvider);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Permintaan disetujui')),
+                      );
+                    } catch (e) {
+                      Log.e('SwapApproval', 'approve failed', e);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Gagal menyetujui permintaan')),
+                      );
+                    }
                   },
-                  onReject: () {
-                    ref.read(swapRepositoryProvider).rejectRequest(requests[index].id);
-                    ref.read(notificationServiceProvider).notify(
-                      NotificationType.swapRejected,
-                      'Tukar Jadwal Ditolak',
-                      '${requests[index].requesterName} — ${requests[index].targetMemberName}',
-                    );
-                    ref.invalidate(pendingSwapsProvider);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Permintaan ditolak')),
-                    );
+                  onReject: () async {
+                    try {
+                      await ref.read(swapRepositoryProvider).rejectRequest(requests[index].id);
+                      ref.read(notificationServiceProvider).notify(
+                        NotificationType.swapRejected,
+                        'Tukar Jadwal Ditolak',
+                        '${requests[index].requesterName} — ${requests[index].targetMemberName}',
+                      );
+                      ref.invalidate(pendingSwapsProvider);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Permintaan ditolak')),
+                      );
+                    } catch (e) {
+                      Log.e('SwapApproval', 'reject failed', e);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Gagal menolak permintaan')),
+                      );
+                    }
                   },
                 ),
               ),

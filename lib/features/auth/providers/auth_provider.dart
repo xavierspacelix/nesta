@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nesta/core/services/logger.dart';
+import 'package:nesta/features/members/providers/members_provider.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/supabase_auth_repository.dart';
 
@@ -53,13 +54,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<String?> _fetchHouseId(String userId) async {
     try {
-      final response = await Supabase.instance.client
-          .from('profiles')
-          .select('house_id')
-          .eq('id', userId)
-          .maybeSingle();
-      if (response == null) return null;
-      final houseId = response['house_id'] as String?;
+      final repo = ref.read(membersRepositoryProvider);
+      final houseId = await repo.getHouseId(userId);
       Log.d('Auth', 'houseId for $userId: ${houseId ?? 'null'}');
       return houseId;
     } catch (e) {

@@ -29,7 +29,7 @@ class _TaskVerificationScreenState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal approve: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Gagal approve tugas')));
       }
       Log.e('VerifScreen', 'approve failed', e);
     } finally {
@@ -53,8 +53,10 @@ class _TaskVerificationScreenState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat verifikasi')),
         data: (v) => RefreshIndicator(
-          onRefresh: () =>
-              ref.refresh(taskVerificationProvider(widget.taskId).future),
+          onRefresh: () {
+            ref.refresh(taskVerificationProvider(widget.taskId));
+            return Future.value();
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24),

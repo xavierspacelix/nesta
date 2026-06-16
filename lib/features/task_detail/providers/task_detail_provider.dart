@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/providers/progress_provider.dart';
+import 'package:nesta/features/members/providers/members_provider.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../models/task_detail.dart';
 import '../repositories/task_detail_repository.dart';
@@ -26,10 +27,12 @@ class TaskDetailNotifier extends FamilyAsyncNotifier<TaskDetail, String> {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final item = current.checklist.firstWhere((i) => i.id == itemId);
+    final item = current.checklist.firstWhere(
+      (i) => i.id == itemId,
+      orElse: () => throw StateError('Item $itemId not found in checklist'),
+    );
     final newStatus = !item.isCompleted;
-    final client = Supabase.instance.client;
-    final userId = client.auth.currentUser?.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
     try {
@@ -53,12 +56,8 @@ class TaskDetailNotifier extends FamilyAsyncNotifier<TaskDetail, String> {
 
       final allDone = updatedList.every((i) => i.isCompleted);
       if (allDone) {
-        final profile = await client
-            .from('profiles')
-            .select('house_id')
-            .eq('id', userId)
-            .maybeSingle();
-        final houseId = profile?['house_id'] as String?;
+        final membersRepo = ref.read(membersRepositoryProvider);
+        final houseId = await membersRepo.getHouseId(userId);
         if (houseId != null) {
           final activityRepo = ref.read(activityRepositoryProvider);
           await activityRepo.createActivity(
@@ -85,7 +84,6 @@ class TaskDetailNotifier extends FamilyAsyncNotifier<TaskDetail, String> {
       } else {
         state = AsyncData(current.copyWith(afterPhoto: photoUrl));
       }
-      ref.invalidateSelf();
     } catch (e) {
       Log.e('TaskDetailNotifier', 'uploadEvidence failed', e);
     }

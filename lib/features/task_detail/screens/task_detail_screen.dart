@@ -29,7 +29,7 @@ class TaskDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat detail tugas')),
         data: (detail) => RefreshIndicator(
-          onRefresh: () => ref.refresh(taskDetailProvider(taskId).future),
+          onRefresh: () { ref.refresh(taskDetailProvider(taskId)); return Future.value(); },
           child: _buildContent(context, ref, detail),
         ),
       ),

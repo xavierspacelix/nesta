@@ -7,7 +7,7 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:nesta/features/members/providers/members_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -115,35 +115,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _saving = true);
 
     try {
-      final client = Supabase.instance.client;
-      final user = client.auth.currentUser;
-      if (user == null) throw 'Sesi tidak ditemukan, silakan login ulang.';
+      final nickname = _nicknameController.text.trim();
 
-      await client
-          .from('profiles')
-          .update({'nickname': _nicknameController.text.trim()})
-          .eq('id', user.id);
-
+      String? avatarUrl;
       if (_avatarBytes != null && _avatarFileName != null) {
         try {
           final storage = ref.read(storageServiceProvider);
-          final url = await storage.uploadFile(
+          avatarUrl = await storage.uploadFile(
             folder: 'avatars',
             fileName: _avatarFileName!,
             bytes: _avatarBytes!,
           );
-          await client.from('profiles').update({'avatar_url': url}).eq('id', user.id);
         } catch (e) {
           Log.e('Onboarding', 'avatar upload failed', e);
         }
       }
+
+      final repo = ref.read(membersRepositoryProvider);
+      await repo.updateProfile(nickname: nickname, avatarUrl: avatarUrl);
 
       if (!mounted) return;
       context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan profil: $e')),
+        const SnackBar(content: Text('Gagal menyimpan profil. Silakan coba lagi.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);

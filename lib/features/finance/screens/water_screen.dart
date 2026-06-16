@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/features/finance/models/water_schedule.dart';
 import 'package:nesta/features/finance/providers/water_provider.dart';
+import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 
 class WaterScreen extends ConsumerWidget {
@@ -24,7 +25,7 @@ class WaterScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
         data: (schedule) => RefreshIndicator(
-          onRefresh: () => ref.refresh(waterScheduleProvider.future),
+          onRefresh: () { ref.refresh(waterScheduleProvider); return Future.value(); },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24),
@@ -122,14 +123,25 @@ class WaterScreen extends ConsumerWidget {
                   child: SizedBox(
                     height: 44,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        ref.read(waterRepositoryProvider).markPurchased();
-                        ref.invalidate(waterScheduleProvider);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pembelian galon dicatat!'),
-                          ),
-                        );
+                      onPressed: () async {
+                        try {
+                          ref.read(waterRepositoryProvider).markPurchased();
+                          ref.invalidate(waterScheduleProvider);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pembelian galon dicatat!'),
+                            ),
+                          );
+                        } catch (e) {
+                          Log.e('Water', 'markPurchased failed', e);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Gagal mencatat pembelian'),
+                            ),
+                          );
+                        }
                       },
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
                       label: const Text(

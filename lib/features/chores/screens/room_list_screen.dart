@@ -29,7 +29,7 @@ class RoomListScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat ruangan')),
         data: (rooms) => RefreshIndicator(
-          onRefresh: () => ref.refresh(roomsProvider.future),
+          onRefresh: () { ref.refresh(roomsProvider); return Future.value(); },
           child: rooms.isEmpty
               ? SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),

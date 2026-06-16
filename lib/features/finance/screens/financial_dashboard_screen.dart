@@ -38,10 +38,10 @@ class FinancialDashboardScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            await ref.refresh(currentFinesProvider.future);
-            await ref.refresh(rentHistoryProvider.future);
-            await ref.refresh(electricityPurchasesProvider.future);
-            await ref.refresh(waterScheduleProvider.future);
+            ref.refresh(currentFinesProvider);
+            ref.refresh(rentHistoryProvider);
+            ref.refresh(electricityPurchasesProvider);
+            ref.refresh(waterScheduleProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
