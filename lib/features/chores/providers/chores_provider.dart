@@ -13,6 +13,12 @@ final todayDutyProvider = AsyncNotifierProvider<TodayDutyNotifier, Chore?>(() {
   return TodayDutyNotifier();
 });
 
+final todayChoresProvider = FutureProvider<List<Chore>>((ref) {
+  ref.watch(checklistProgressChangedProvider);
+  final repository = ref.watch(choreRepositoryProvider);
+  return repository.getTodayChores();
+});
+
 class TodayDutyNotifier extends AsyncNotifier<Chore?> {
   @override
   Future<Chore?> build() async {

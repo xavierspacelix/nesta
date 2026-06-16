@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/features/task_detail/models/task_verification.dart';
+import 'package:nesta/features/task_detail/providers/task_detail_provider.dart';
 import 'package:nesta/features/task_detail/providers/task_verification_provider.dart';
 
 class TaskVerificationScreen extends ConsumerStatefulWidget {
@@ -18,22 +19,28 @@ class TaskVerificationScreen extends ConsumerStatefulWidget {
 class _TaskVerificationScreenState
     extends ConsumerState<TaskVerificationScreen> {
   bool _approving = false;
+  bool _approved = false;
 
   Future<void> _approve() async {
     setState(() => _approving = true);
     try {
       final repo = ref.read(taskVerificationRepositoryProvider);
       await repo.approveTask(widget.taskId);
-      ref.invalidate(taskVerificationProvider(widget.taskId));
+      if (!mounted) return;
+      setState(() {
+        _approved = true;
+        _approving = false;
+      });
+      ref.refresh(taskVerificationProvider(widget.taskId));
+      ref.refresh(taskDetailProvider(widget.taskId));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Gagal approve tugas')));
-      }
       Log.e('VerifScreen', 'approve failed', e);
-    } finally {
-      if (mounted) setState(() => _approving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal approve tugas')),
+        );
+        setState(() => _approving = false);
+      }
     }
   }
 
@@ -53,9 +60,9 @@ class _TaskVerificationScreenState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat verifikasi')),
         data: (v) => RefreshIndicator(
-          onRefresh: () {
-            ref.refresh(taskVerificationProvider(widget.taskId));
-            return Future.value();
+          onRefresh: () async {
+            ref.invalidate(taskVerificationProvider(widget.taskId));
+            await ref.read(taskVerificationProvider(widget.taskId).future);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -70,8 +77,7 @@ class _TaskVerificationScreenState
                 const SizedBox(height: 24),
                 _buildSummaryCard(context, v),
                 const SizedBox(height: 32),
-                if (v.status == VerificationStatus.pending ||
-                    v.status == VerificationStatus.late) ...[
+                if (v.status == VerificationStatus.pending) ...[
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -101,7 +107,7 @@ class _TaskVerificationScreenState
                         ),
                         elevation: 0,
                       ),
-                      onPressed: _approving ? null : _approve,
+                      onPressed: (_approving || _approved) ? null : _approve,
                     ),
                   ),
                   const SizedBox(height: 12),

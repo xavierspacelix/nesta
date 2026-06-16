@@ -297,7 +297,7 @@ as List<WaterPurchase>,
 /// @nodoc
 mixin _$WaterPurchase {
 
- String get buyerName; DateTime get date;
+ String get id; String get buyerName; DateTime get date; String? get proofPhoto; bool get isVerified;
 /// Create a copy of WaterPurchase
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -310,16 +310,16 @@ $WaterPurchaseCopyWith<WaterPurchase> get copyWith => _$WaterPurchaseCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WaterPurchase&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.date, date) || other.date == date));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WaterPurchase&&(identical(other.id, id) || other.id == id)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.date, date) || other.date == date)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,buyerName,date);
+int get hashCode => Object.hash(runtimeType,id,buyerName,date,proofPhoto,isVerified);
 
 @override
 String toString() {
-  return 'WaterPurchase(buyerName: $buyerName, date: $date)';
+  return 'WaterPurchase(id: $id, buyerName: $buyerName, date: $date, proofPhoto: $proofPhoto, isVerified: $isVerified)';
 }
 
 
@@ -330,7 +330,7 @@ abstract mixin class $WaterPurchaseCopyWith<$Res>  {
   factory $WaterPurchaseCopyWith(WaterPurchase value, $Res Function(WaterPurchase) _then) = _$WaterPurchaseCopyWithImpl;
 @useResult
 $Res call({
- String buyerName, DateTime date
+ String id, String buyerName, DateTime date, String? proofPhoto, bool isVerified
 });
 
 
@@ -347,11 +347,14 @@ class _$WaterPurchaseCopyWithImpl<$Res>
 
 /// Create a copy of WaterPurchase
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? buyerName = null,Object? date = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? buyerName = null,Object? date = null,Object? proofPhoto = freezed,Object? isVerified = null,}) {
   return _then(WaterPurchase(
-buyerName: null == buyerName ? _self.buyerName : buyerName // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,buyerName: null == buyerName ? _self.buyerName : buyerName // ignore: cast_nullable_to_non_nullable
 as String,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
+as String?,isVerified: null == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -436,10 +439,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String buyerName,  DateTime date)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String buyerName,  DateTime date,  String? proofPhoto,  bool isVerified)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WaterPurchase() when $default != null:
-return $default(_that.buyerName,_that.date);case _:
+return $default(_that.id,_that.buyerName,_that.date,_that.proofPhoto,_that.isVerified);case _:
   return orElse();
 
 }
@@ -457,10 +460,10 @@ return $default(_that.buyerName,_that.date);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String buyerName,  DateTime date)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String buyerName,  DateTime date,  String? proofPhoto,  bool isVerified)  $default,) {final _that = this;
 switch (_that) {
 case _WaterPurchase():
-return $default(_that.buyerName,_that.date);case _:
+return $default(_that.id,_that.buyerName,_that.date,_that.proofPhoto,_that.isVerified);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -477,10 +480,10 @@ return $default(_that.buyerName,_that.date);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String buyerName,  DateTime date)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String buyerName,  DateTime date,  String? proofPhoto,  bool isVerified)?  $default,) {final _that = this;
 switch (_that) {
 case _WaterPurchase() when $default != null:
-return $default(_that.buyerName,_that.date);case _:
+return $default(_that.id,_that.buyerName,_that.date,_that.proofPhoto,_that.isVerified);case _:
   return null;
 
 }
@@ -491,12 +494,15 @@ return $default(_that.buyerName,_that.date);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _WaterPurchase implements WaterPurchase {
-  const _WaterPurchase({required this.buyerName, required this.date});
+class _WaterPurchase extends WaterPurchase {
+  const _WaterPurchase({required this.id, required this.buyerName, required this.date, this.proofPhoto, this.isVerified = false}): super._();
   factory _WaterPurchase.fromJson(Map<String, dynamic> json) => _$WaterPurchaseFromJson(json);
 
+@override final  String id;
 @override final  String buyerName;
 @override final  DateTime date;
+@override final  String? proofPhoto;
+@override@JsonKey() final  bool isVerified;
 
 /// Create a copy of WaterPurchase
 /// with the given fields replaced by the non-null parameter values.
@@ -511,16 +517,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WaterPurchase&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.date, date) || other.date == date));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WaterPurchase&&(identical(other.id, id) || other.id == id)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.date, date) || other.date == date)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,buyerName,date);
+int get hashCode => Object.hash(runtimeType,id,buyerName,date,proofPhoto,isVerified);
 
 @override
 String toString() {
-  return 'WaterPurchase(buyerName: $buyerName, date: $date)';
+  return 'WaterPurchase(id: $id, buyerName: $buyerName, date: $date, proofPhoto: $proofPhoto, isVerified: $isVerified)';
 }
 
 
@@ -531,7 +537,7 @@ abstract mixin class _$WaterPurchaseCopyWith<$Res> implements $WaterPurchaseCopy
   factory _$WaterPurchaseCopyWith(_WaterPurchase value, $Res Function(_WaterPurchase) _then) = __$WaterPurchaseCopyWithImpl;
 @override @useResult
 $Res call({
- String buyerName, DateTime date
+ String id, String buyerName, DateTime date, String? proofPhoto, bool isVerified
 });
 
 
@@ -548,11 +554,14 @@ class __$WaterPurchaseCopyWithImpl<$Res>
 
 /// Create a copy of WaterPurchase
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? buyerName = null,Object? date = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? buyerName = null,Object? date = null,Object? proofPhoto = freezed,Object? isVerified = null,}) {
   return _then(_WaterPurchase(
-buyerName: null == buyerName ? _self.buyerName : buyerName // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,buyerName: null == buyerName ? _self.buyerName : buyerName // ignore: cast_nullable_to_non_nullable
 as String,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
+as String?,isVerified: null == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

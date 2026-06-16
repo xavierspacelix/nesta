@@ -28,4 +28,23 @@ class StorageService {
       rethrow;
     }
   }
+
+  Future<Uint8List> downloadBytes(String url) async {
+    final path = _extractPath(url);
+    final bytes = await _client.storage.from(bucketName).download(path);
+    return Uint8List.fromList(bytes);
+  }
+
+  Future<String> createSignedUrl(String url) async {
+    final path = _extractPath(url);
+    final signed = await _client.storage.from(bucketName).createSignedUrl(path, 3600);
+    return signed;
+  }
+
+  String _extractPath(String url) {
+    final prefix = '/object/public/$bucketName/';
+    final idx = url.indexOf(prefix);
+    if (idx == -1) return url;
+    return url.substring(idx + prefix.length);
+  }
 }

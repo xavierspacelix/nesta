@@ -28,19 +28,22 @@ class SupabaseElectricityRepository implements IElectricityRepository {
 
       final response = await _client
           .from('electricity_purchases')
-          .select('id, amount, proof_photo, purchased_at, profiles(name, nickname)')
+          .select('id, amount, proof_photo, is_verified, purchased_at, profiles!electricity_purchases_purchased_by_fkey(name, nickname)')
           .eq('house_id', houseId)
           .order('purchased_at', ascending: false);
 
       return response.map((json) {
-        final profile = json['profiles'] as Map;
-        final userName = (profile['nickname'] as String?) ?? (profile['name'] as String? ?? 'Unknown').split(' ').first;
+        final profile = json['profiles'] as Map?;
+        final userName = profile != null
+            ? ((profile['nickname'] as String?) ?? (profile['name'] as String? ?? 'Unknown').split(' ').first)
+            : 'Unknown';
         return ElectricityPurchase(
           id: json['id'] as String,
           amount: json['amount'] as int,
           purchasedBy: userName,
           date: DateTime.parse(json['purchased_at'] as String),
           proofPhoto: json['proof_photo'] as String?,
+          isVerified: json['is_verified'] as bool? ?? false,
         );
       }).toList();
     } catch (e) {
@@ -77,6 +80,23 @@ class SupabaseElectricityRepository implements IElectricityRepository {
       });
     } catch (e) {
       Log.e('ElectricityRepo', 'addPurchase failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> verifyPurchase(String purchaseId) async {
+    try {
+      await _client
+          .from('electricity_purchases')
+          .update({
+            'is_verified': true,
+            'verified_by': _userId,
+            'verified_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', purchaseId);
+    } catch (e) {
+      Log.e('ElectricityRepo', 'verifyPurchase failed', e);
       rethrow;
     }
   }

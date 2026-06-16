@@ -23,17 +23,28 @@ class SupabaseFineRepository implements IFineRepository {
   List<FineEntry> _mapFines(List<dynamic> rows) {
     return rows.map((json) {
       final memberName = json['profiles'] is Map
-          ? ((json['profiles'] as Map)['nickname'] as String?) ?? ((json['profiles'] as Map)['name'] as String? ?? 'Unknown').split(' ').first
+          ? ((json['profiles'] as Map)['nickname'] as String?) ??
+                ((json['profiles'] as Map)['name'] as String? ?? 'Unknown')
+                    .split(' ')
+                    .first
           : 'Unknown';
       final amount = json['amount'] as int;
+      final statusStr = json['status'] as String;
+      final status = switch (statusStr) {
+        'paid' => FineStatus.paid,
+        'pending_verification' => FineStatus.pendingVerification,
+        _ => FineStatus.unpaid,
+      };
       return FineEntry(
         id: json['id'] as String,
+        memberId: json['member_id'] as String,
         memberName: memberName,
         reason: json['reason'] as String,
         amount: amount,
         completionPercentage: _calcPercentage(amount),
         date: DateTime.parse(json['created_at'] as String),
-        status: json['status'] == 'paid' ? FineStatus.paid : FineStatus.unpaid,
+        status: status,
+        proofPhoto: json['proof_photo'] as String?,
       );
     }).toList();
   }
@@ -47,14 +58,18 @@ class SupabaseFineRepository implements IFineRepository {
   @override
   Future<List<FineEntry>> getCurrentFines() async {
     try {
+      await generateFines();
+
       final houseId = await _getHouseId();
       if (houseId == null) return [];
 
       final response = await _client
           .from('fines')
-          .select('id, reason, amount, status, created_at, profiles(name, nickname)')
+          .select(
+            'id, member_id, reason, amount, status, created_at, proof_photo, profiles!fines_member_id_fkey(name, nickname)',
+          )
           .eq('house_id', houseId)
-          .eq('status', 'unpaid')
+          .filter('status', 'in', '(unpaid,pending_verification)')
           .order('created_at', ascending: false);
 
       return _mapFines(response);
@@ -72,7 +87,9 @@ class SupabaseFineRepository implements IFineRepository {
 
       final response = await _client
           .from('fines')
-          .select('id, reason, amount, status, created_at, profiles(name, nickname)')
+          .select(
+            'id, member_id, reason, amount, status, created_at, proof_photo, profiles!fines_member_id_fkey(name, nickname)',
+          )
           .eq('house_id', houseId)
           .eq('status', 'paid')
           .order('created_at', ascending: false);
@@ -101,7 +118,10 @@ class SupabaseFineRepository implements IFineRepository {
           .gte('created_at', monthStart.toIso8601String())
           .lte('created_at', monthEnd.toIso8601String());
 
-      return response.fold<int>(0, (sum, json) => sum + (json['amount'] as int));
+      return response.fold<int>(
+        0,
+        (sum, json) => sum + (json['amount'] as int),
+      );
     } catch (e) {
       Log.e('FineRepo', 'getMonthlyTotal failed', e);
       rethrow;
@@ -113,7 +133,9 @@ class SupabaseFineRepository implements IFineRepository {
     try {
       final response = await _client
           .from('fines')
-          .select('id, reason, amount, status, created_at, profiles(name, nickname)')
+          .select(
+            'id, member_id, reason, amount, status, created_at, proof_photo, profiles!fines_member_id_fkey(name, nickname)',
+          )
           .eq('id', fineId)
           .maybeSingle();
 
@@ -130,11 +152,57 @@ class SupabaseFineRepository implements IFineRepository {
     try {
       await _client
           .from('fines')
-          .update({'status': 'paid', 'paid_at': DateTime.now().toIso8601String()})
+          .update({
+            'status': 'paid',
+            'paid_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', fineId);
     } catch (e) {
       Log.e('FineRepo', 'markAsPaid failed', e);
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> uploadProof(String fineId, String photoUrl) async {
+    try {
+      await _client
+          .from('fines')
+          .update({
+            'proof_photo': photoUrl,
+            'status': 'pending_verification',
+            'paid_by': _userId,
+          })
+          .eq('id', fineId);
+    } catch (e) {
+      Log.e('FineRepo', 'uploadProof failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> verifyPayment(String fineId) async {
+    try {
+      await _client
+          .from('fines')
+          .update({
+            'status': 'paid',
+            'verified_by': _userId,
+            'verified_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', fineId);
+    } catch (e) {
+      Log.e('FineRepo', 'verifyPayment failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> generateFines() async {
+    try {
+      await _client.rpc('generate_fines');
+    } catch (e) {
+      Log.e('FineRepo', 'generateFines failed', e);
     }
   }
 }

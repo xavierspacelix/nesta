@@ -30,12 +30,18 @@ Map<String, dynamic> _$WaterScheduleToJson(_WaterSchedule instance) =>
 
 _WaterPurchase _$WaterPurchaseFromJson(Map<String, dynamic> json) =>
     _WaterPurchase(
+      id: json['id'] as String,
       buyerName: json['buyerName'] as String,
       date: DateTime.parse(json['date'] as String),
+      proofPhoto: json['proofPhoto'] as String?,
+      isVerified: json['isVerified'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$WaterPurchaseToJson(_WaterPurchase instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'buyerName': instance.buyerName,
       'date': instance.date.toIso8601String(),
+      'proofPhoto': instance.proofPhoto,
+      'isVerified': instance.isVerified,
     };

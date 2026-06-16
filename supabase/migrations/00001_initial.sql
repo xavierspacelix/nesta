@@ -337,10 +337,10 @@ create policy "House members can insert assignments"
   on assignments for insert
   with check (is_house_member(house_id));
 
-create policy "Assigned user can update their assignment"
+create policy "Assigned user or house members can update assignments"
   on assignments for update
-  using (assigned_to = auth.uid())
-  with check (assigned_to = auth.uid());
+  using (assigned_to = auth.uid() or is_house_member(house_id))
+  with check (assigned_to = auth.uid() or is_house_member(house_id));
 
 -- Assignment checklist progress: through assignment
 create policy "House members can read checklist progress"
@@ -518,3 +518,64 @@ create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row
   execute function public.handle_new_user();
+
+-- Generate fines for past-due pending assignments
+-- Formula: (100 - progress%) × 500, max Rp50.000, min Rp0
+create or replace function public.generate_fines()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_assignment record;
+  v_total_items int;
+  v_completed_items int;
+  v_completion_pct numeric;
+  v_fine_amount int;
+begin
+  for v_assignment in
+    select
+      a.id, a.house_id, a.assigned_to, a.assigned_date,
+      r.name as room_name
+    from assignments a
+    join rooms r on r.id = a.room_id
+    where a.assigned_date < current_date
+      and a.status = 'pending'
+      and not exists (
+        select 1 from fines f
+        where f.member_id = a.assigned_to
+          and f.created_at::date = a.assigned_date
+      )
+  loop
+    select
+      count(*),
+      count(*) filter (where acp.is_completed = true)
+    into v_total_items, v_completed_items
+    from assignment_checklist_progress acp
+    where acp.assignment_id = v_assignment.id;
+
+    if v_total_items > 0 then
+      v_completion_pct := (v_completed_items::numeric / v_total_items) * 100;
+    else
+      v_completion_pct := 0;
+    end if;
+
+    v_fine_amount := greatest(0, least(50000, ((100 - v_completion_pct) * 500)::int));
+
+    if v_fine_amount > 0 then
+      insert into fines (house_id, member_id, reason, amount, status)
+      values (
+        v_assignment.house_id,
+        v_assignment.assigned_to,
+        'Piket ' || v_assignment.room_name || ' (' || v_assignment.assigned_date || ')',
+        v_fine_amount,
+        'unpaid'
+      );
+    end if;
+
+    update assignments set status = 'missed'
+    where id = v_assignment.id;
+  end loop;
+end;
+$$;

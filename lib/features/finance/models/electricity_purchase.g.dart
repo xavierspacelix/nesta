@@ -13,6 +13,7 @@ _ElectricityPurchase _$ElectricityPurchaseFromJson(Map<String, dynamic> json) =>
       purchasedBy: json['purchasedBy'] as String,
       date: DateTime.parse(json['date'] as String),
       proofPhoto: json['proofPhoto'] as String?,
+      isVerified: json['isVerified'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ElectricityPurchaseToJson(
@@ -23,4 +24,5 @@ Map<String, dynamic> _$ElectricityPurchaseToJson(
   'purchasedBy': instance.purchasedBy,
   'date': instance.date.toIso8601String(),
   'proofPhoto': instance.proofPhoto,
+  'isVerified': instance.isVerified,
 };

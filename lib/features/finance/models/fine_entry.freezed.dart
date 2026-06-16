@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$FineEntry {
 
- String get id; String get memberName; String get reason; int get amount; double get completionPercentage; DateTime get date; FineStatus get status;
+ String get id; String get memberId; String get memberName; String get reason; int get amount; double get completionPercentage; DateTime get date; FineStatus get status; String? get proofPhoto;
 /// Create a copy of FineEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $FineEntryCopyWith<FineEntry> get copyWith => _$FineEntryCopyWithImpl<FineEntry>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FineEntry&&(identical(other.id, id) || other.id == id)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.completionPercentage, completionPercentage) || other.completionPercentage == completionPercentage)&&(identical(other.date, date) || other.date == date)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FineEntry&&(identical(other.id, id) || other.id == id)&&(identical(other.memberId, memberId) || other.memberId == memberId)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.completionPercentage, completionPercentage) || other.completionPercentage == completionPercentage)&&(identical(other.date, date) || other.date == date)&&(identical(other.status, status) || other.status == status)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,memberName,reason,amount,completionPercentage,date,status);
+int get hashCode => Object.hash(runtimeType,id,memberId,memberName,reason,amount,completionPercentage,date,status,proofPhoto);
 
 @override
 String toString() {
-  return 'FineEntry(id: $id, memberName: $memberName, reason: $reason, amount: $amount, completionPercentage: $completionPercentage, date: $date, status: $status)';
+  return 'FineEntry(id: $id, memberId: $memberId, memberName: $memberName, reason: $reason, amount: $amount, completionPercentage: $completionPercentage, date: $date, status: $status, proofPhoto: $proofPhoto)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $FineEntryCopyWith<$Res>  {
   factory $FineEntryCopyWith(FineEntry value, $Res Function(FineEntry) _then) = _$FineEntryCopyWithImpl;
 @useResult
 $Res call({
- String id, String memberName, String reason, int amount, double completionPercentage, DateTime date, FineStatus status
+ String id, String memberId, String memberName, String reason, int amount, double completionPercentage, DateTime date, FineStatus status, String? proofPhoto
 });
 
 
@@ -66,16 +66,18 @@ class _$FineEntryCopyWithImpl<$Res>
 
 /// Create a copy of FineEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? memberName = null,Object? reason = null,Object? amount = null,Object? completionPercentage = null,Object? date = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? memberId = null,Object? memberName = null,Object? reason = null,Object? amount = null,Object? completionPercentage = null,Object? date = null,Object? status = null,Object? proofPhoto = freezed,}) {
   return _then(FineEntry(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,memberId: null == memberId ? _self.memberId : memberId // ignore: cast_nullable_to_non_nullable
 as String,memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
 as String,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as int,completionPercentage: null == completionPercentage ? _self.completionPercentage : completionPercentage // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as FineStatus,
+as FineStatus,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -160,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String memberId,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status,  String? proofPhoto)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FineEntry() when $default != null:
-return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status);case _:
+return $default(_that.id,_that.memberId,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status,_that.proofPhoto);case _:
   return orElse();
 
 }
@@ -181,10 +183,10 @@ return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.comple
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String memberId,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status,  String? proofPhoto)  $default,) {final _that = this;
 switch (_that) {
 case _FineEntry():
-return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status);case _:
+return $default(_that.id,_that.memberId,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status,_that.proofPhoto);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +203,10 @@ return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.comple
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String memberId,  String memberName,  String reason,  int amount,  double completionPercentage,  DateTime date,  FineStatus status,  String? proofPhoto)?  $default,) {final _that = this;
 switch (_that) {
 case _FineEntry() when $default != null:
-return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status);case _:
+return $default(_that.id,_that.memberId,_that.memberName,_that.reason,_that.amount,_that.completionPercentage,_that.date,_that.status,_that.proofPhoto);case _:
   return null;
 
 }
@@ -216,16 +218,18 @@ return $default(_that.id,_that.memberName,_that.reason,_that.amount,_that.comple
 @JsonSerializable()
 
 class _FineEntry extends FineEntry {
-  const _FineEntry({required this.id, required this.memberName, required this.reason, required this.amount, required this.completionPercentage, required this.date, required this.status}): super._();
+  const _FineEntry({required this.id, required this.memberId, required this.memberName, required this.reason, required this.amount, required this.completionPercentage, required this.date, required this.status, this.proofPhoto}): super._();
   factory _FineEntry.fromJson(Map<String, dynamic> json) => _$FineEntryFromJson(json);
 
 @override final  String id;
+@override final  String memberId;
 @override final  String memberName;
 @override final  String reason;
 @override final  int amount;
 @override final  double completionPercentage;
 @override final  DateTime date;
 @override final  FineStatus status;
+@override final  String? proofPhoto;
 
 /// Create a copy of FineEntry
 /// with the given fields replaced by the non-null parameter values.
@@ -240,16 +244,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FineEntry&&(identical(other.id, id) || other.id == id)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.completionPercentage, completionPercentage) || other.completionPercentage == completionPercentage)&&(identical(other.date, date) || other.date == date)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FineEntry&&(identical(other.id, id) || other.id == id)&&(identical(other.memberId, memberId) || other.memberId == memberId)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.completionPercentage, completionPercentage) || other.completionPercentage == completionPercentage)&&(identical(other.date, date) || other.date == date)&&(identical(other.status, status) || other.status == status)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,memberName,reason,amount,completionPercentage,date,status);
+int get hashCode => Object.hash(runtimeType,id,memberId,memberName,reason,amount,completionPercentage,date,status,proofPhoto);
 
 @override
 String toString() {
-  return 'FineEntry(id: $id, memberName: $memberName, reason: $reason, amount: $amount, completionPercentage: $completionPercentage, date: $date, status: $status)';
+  return 'FineEntry(id: $id, memberId: $memberId, memberName: $memberName, reason: $reason, amount: $amount, completionPercentage: $completionPercentage, date: $date, status: $status, proofPhoto: $proofPhoto)';
 }
 
 
@@ -260,7 +264,7 @@ abstract mixin class _$FineEntryCopyWith<$Res> implements $FineEntryCopyWith<$Re
   factory _$FineEntryCopyWith(_FineEntry value, $Res Function(_FineEntry) _then) = __$FineEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String memberName, String reason, int amount, double completionPercentage, DateTime date, FineStatus status
+ String id, String memberId, String memberName, String reason, int amount, double completionPercentage, DateTime date, FineStatus status, String? proofPhoto
 });
 
 
@@ -277,16 +281,18 @@ class __$FineEntryCopyWithImpl<$Res>
 
 /// Create a copy of FineEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? memberName = null,Object? reason = null,Object? amount = null,Object? completionPercentage = null,Object? date = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? memberId = null,Object? memberName = null,Object? reason = null,Object? amount = null,Object? completionPercentage = null,Object? date = null,Object? status = null,Object? proofPhoto = freezed,}) {
   return _then(_FineEntry(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,memberId: null == memberId ? _self.memberId : memberId // ignore: cast_nullable_to_non_nullable
 as String,memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
 as String,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as int,completionPercentage: null == completionPercentage ? _self.completionPercentage : completionPercentage // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as FineStatus,
+as FineStatus,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

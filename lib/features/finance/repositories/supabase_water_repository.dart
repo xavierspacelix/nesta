@@ -49,14 +49,17 @@ class SupabaseWaterRepository implements IWaterRepository {
 
       final purchases = await _client
           .from('water_purchases')
-          .select('buyer_name, purchased_at')
+          .select('id, buyer_name, purchased_at, proof_photo, is_verified')
           .eq('house_id', houseId)
           .order('purchased_at', ascending: false);
 
       final history = purchases.map((p) {
         return WaterPurchase(
+          id: p['id'] as String,
           buyerName: p['buyer_name'] as String,
           date: DateTime.parse(p['purchased_at'] as String),
+          proofPhoto: p['proof_photo'] as String?,
+          isVerified: p['is_verified'] as bool? ?? false,
         );
       }).toList();
 
@@ -97,7 +100,7 @@ class SupabaseWaterRepository implements IWaterRepository {
   }
 
   @override
-  Future<void> markPurchased() async {
+  Future<void> markPurchased({String? proofPhoto}) async {
     try {
       final houseId = await _getHouseId();
       if (houseId == null) return;
@@ -107,9 +110,24 @@ class SupabaseWaterRepository implements IWaterRepository {
       await _client.from('water_purchases').insert({
         'house_id': houseId,
         'buyer_name': schedule.nextBuyer,
+        if (proofPhoto != null) 'proof_photo': proofPhoto,
       });
     } catch (e) {
       Log.e('WaterRepo', 'markPurchased failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> verifyPurchase(String purchaseId) async {
+    try {
+      await _client.from('water_purchases').update({
+        'is_verified': true,
+        'verified_at': DateTime.now().toIso8601String(),
+        'verified_by': _userId,
+      }).eq('id', purchaseId);
+    } catch (e) {
+      Log.e('WaterRepo', 'verifyPurchase failed', e);
       rethrow;
     }
   }

@@ -29,7 +29,10 @@ class TaskDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat detail tugas')),
         data: (detail) => RefreshIndicator(
-          onRefresh: () { ref.refresh(taskDetailProvider(taskId)); return Future.value(); },
+          onRefresh: () async {
+            ref.invalidate(taskDetailProvider(taskId));
+            await ref.read(taskDetailProvider(taskId).future);
+          },
           child: _buildContent(context, ref, detail),
         ),
       ),
@@ -51,27 +54,48 @@ class TaskDetailScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _buildChecklistSection(context, ref, detail),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: detail.progress == 1.0
-                  ? () => context.push('/task/$taskId/verification')
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          if (detail.status == TaskStatus.completed)
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/task/$taskId/verification'),
+                icon: const Icon(Icons.visibility_rounded, size: 20),
+                label: const Text(
+                  'Lihat Hasil Verifikasi',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                elevation: 0,
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  side: const BorderSide(color: AppTheme.neutral300),
+                  foregroundColor: AppTheme.neutral600,
+                ),
               ),
-              child: const Text(
-                'Selesaikan Tugas',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: detail.progress == 1.0
+                    ? () => context.push('/task/$taskId/verification')
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Selesaikan Tugas',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 24),
         ],
       ),
@@ -357,6 +381,7 @@ class TaskDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: _ChecklistTile(
               item: item,
+              readOnly: detail.status == TaskStatus.completed,
               onToggle: () => ref
                   .read(taskDetailProvider(taskId).notifier)
                   .toggleChecklist(item.id),
@@ -488,14 +513,19 @@ class _PhotoCard extends StatelessWidget {
 
 class _ChecklistTile extends StatelessWidget {
   final ChecklistItem item;
+  final bool readOnly;
   final VoidCallback onToggle;
 
-  const _ChecklistTile({required this.item, required this.onToggle});
+  const _ChecklistTile({
+    required this.item,
+    this.readOnly = false,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onToggle,
+      onTap: readOnly ? null : onToggle,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(

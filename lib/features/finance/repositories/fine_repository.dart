@@ -6,6 +6,9 @@ abstract class IFineRepository {
   Future<int> getMonthlyTotal();
   Future<FineEntry?> getFineById(String fineId);
   Future<void> markAsPaid(String fineId);
+  Future<void> uploadProof(String fineId, String photoUrl);
+  Future<void> verifyPayment(String fineId);
+  Future<void> generateFines();
 }
 
 class MockFineRepository implements IFineRepository {
@@ -18,14 +21,17 @@ class MockFineRepository implements IFineRepository {
   void _seedData() {
     final now = DateTime.now();
     final members = ['Budi', 'Juan', 'Rizki', 'Dika', 'Fajar'];
+    final memberIds = ['mem_1', 'mem_2', 'mem_3', 'mem_4', 'mem_5'];
 
     for (int i = 0; i < 12; i++) {
       final date = now.subtract(Duration(days: i * 3));
       final pct = [0.0, 0.25, 0.5, 0.75, 1.0][i % 5];
       final amount = ((1.0 - pct) * 50000).round();
+      final idx = i % members.length;
       _fines.add(FineEntry(
         id: 'fine_$i',
-        memberName: members[i % members.length],
+        memberId: memberIds[idx],
+        memberName: members[idx],
         reason: _reasons[i % _reasons.length],
         amount: amount,
         completionPercentage: pct,
@@ -45,7 +51,11 @@ class MockFineRepository implements IFineRepository {
   @override
   Future<List<FineEntry>> getCurrentFines() async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _fines.where((f) => f.status == FineStatus.unpaid).toList();
+    return _fines
+        .where((f) =>
+            f.status == FineStatus.unpaid ||
+            f.status == FineStatus.pendingVerification)
+        .toList();
   }
 
   @override
@@ -75,18 +85,36 @@ class MockFineRepository implements IFineRepository {
 
   @override
   Future<void> markAsPaid(String fineId) async {
+    await _updateStatus(fineId, FineStatus.paid);
+  }
+
+  @override
+  Future<void> uploadProof(String fineId, String photoUrl) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final index = _fines.indexWhere((f) => f.id == fineId);
     if (index != -1) {
-      _fines[index] = FineEntry(
-        id: _fines[index].id,
-        memberName: _fines[index].memberName,
-        reason: _fines[index].reason,
-        amount: _fines[index].amount,
-        completionPercentage: _fines[index].completionPercentage,
-        date: _fines[index].date,
-        status: FineStatus.paid,
+      _fines[index] = _fines[index].copyWith(
+        proofPhoto: photoUrl,
+        status: FineStatus.pendingVerification,
       );
     }
+  }
+
+  @override
+  Future<void> verifyPayment(String fineId) async {
+    await _updateStatus(fineId, FineStatus.paid);
+  }
+
+  Future<void> _updateStatus(String fineId, FineStatus newStatus) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final index = _fines.indexWhere((f) => f.id == fineId);
+    if (index != -1) {
+      _fines[index] = _fines[index].copyWith(status: newStatus);
+    }
+  }
+
+  @override
+  Future<void> generateFines() async {
+    // Mock: no-op
   }
 }

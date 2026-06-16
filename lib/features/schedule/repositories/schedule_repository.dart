@@ -42,6 +42,7 @@ class MockScheduleRepository implements IScheduleRepository {
         date: date,
         roomName: rooms[roomIndex],
         assignedUser: members[memberIndex],
+        assignedTo: 'user_$memberIndex',
         status: status,
       ));
     }

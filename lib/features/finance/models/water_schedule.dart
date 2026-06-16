@@ -20,10 +20,17 @@ abstract class WaterSchedule with _$WaterSchedule {
 @freezed
 abstract class WaterPurchase with _$WaterPurchase {
   const factory WaterPurchase({
+    required String id,
     required String buyerName,
     required DateTime date,
+    String? proofPhoto,
+    @Default(false) bool isVerified,
   }) = _WaterPurchase;
+
+  const WaterPurchase._();
 
   factory WaterPurchase.fromJson(Map<String, dynamic> json) =>
       _$WaterPurchaseFromJson(json);
+
+  bool get isPendingVerification => !isVerified && proofPhoto != null;
 }

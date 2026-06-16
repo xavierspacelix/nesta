@@ -38,6 +38,10 @@ abstract class MemberPayment with _$MemberPayment {
     String? proofPhoto,
   }) = _MemberPayment;
 
+  const MemberPayment._();
+
   factory MemberPayment.fromJson(Map<String, dynamic> json) =>
       _$MemberPaymentFromJson(json);
+
+  bool get isPendingVerification => !isPaid && proofPhoto != null;
 }

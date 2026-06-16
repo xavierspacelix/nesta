@@ -10,6 +10,7 @@ abstract class ScheduleEntry with _$ScheduleEntry {
     required DateTime date,
     required String roomName,
     required String assignedUser,
+    required String assignedTo,
     required ScheduleStatus status,
   }) = _ScheduleEntry;
 

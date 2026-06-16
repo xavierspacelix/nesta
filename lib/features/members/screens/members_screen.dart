@@ -22,7 +22,10 @@ class MembersScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat anggota')),
         data: (members) => RefreshIndicator(
-          onRefresh: () { ref.refresh(membersProvider); return Future.value(); },
+          onRefresh: () async {
+            ref.invalidate(membersProvider);
+            await ref.read(membersProvider.future);
+          },
           child: ListView.builder(
             padding: const EdgeInsets.all(24),
             itemCount: members.length,

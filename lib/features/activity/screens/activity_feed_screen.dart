@@ -23,7 +23,10 @@ class ActivityFeedScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => const Center(child: Text('Gagal memuat aktivitas')),
           data: (items) => RefreshIndicator(
-            onRefresh: () { ref.refresh(activityFeedProvider); return Future.value(); },
+            onRefresh: () async {
+              ref.invalidate(activityFeedProvider);
+              await ref.read(activityFeedProvider.future);
+            },
             color: AppTheme.primary,
             child: _buildTimeline(context, items),
           ),

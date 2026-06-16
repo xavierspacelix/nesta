@@ -12,6 +12,7 @@ _ScheduleEntry _$ScheduleEntryFromJson(Map<String, dynamic> json) =>
       date: DateTime.parse(json['date'] as String),
       roomName: json['roomName'] as String,
       assignedUser: json['assignedUser'] as String,
+      assignedTo: json['assignedTo'] as String,
       status: $enumDecode(_$ScheduleStatusEnumMap, json['status']),
     );
 
@@ -21,6 +22,7 @@ Map<String, dynamic> _$ScheduleEntryToJson(_ScheduleEntry instance) =>
       'date': instance.date.toIso8601String(),
       'roomName': instance.roomName,
       'assignedUser': instance.assignedUser,
+      'assignedTo': instance.assignedTo,
       'status': _$ScheduleStatusEnumMap[instance.status]!,
     };
 

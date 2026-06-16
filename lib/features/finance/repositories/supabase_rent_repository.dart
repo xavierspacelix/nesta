@@ -58,7 +58,7 @@ class SupabaseRentRepository implements IRentRepository {
 
         final paymentsData = await _client
             .from('member_payments')
-            .select('member_id, is_paid, proof_photo, profiles(name, nickname)')
+            .select('member_id, is_paid, proof_photo, profiles!member_payments_member_id_fkey(name, nickname)')
             .eq('rent_record_id', rentId);
 
         List<MemberPayment> payments;
@@ -139,8 +139,12 @@ class SupabaseRentRepository implements IRentRepository {
 
       if (rentRecord == null) return;
 
-      final updateData = <String, dynamic>{'is_paid': true};
-      if (photoUrl != null) updateData['proof_photo'] = photoUrl;
+      final updateData = <String, dynamic>{};
+      if (photoUrl != null) {
+        updateData['proof_photo'] = photoUrl;
+      } else {
+        updateData['is_paid'] = true;
+      }
 
       await _client
           .from('member_payments')
@@ -154,7 +158,48 @@ class SupabaseRentRepository implements IRentRepository {
   }
 
   @override
-  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi) async {
+  Future<void> verifyPayment(int year, int month, String memberName) async {
+    try {
+      final houseId = await _getHouseId();
+      if (houseId == null) return;
+
+      final profile = await _client
+          .from('profiles')
+          .select('id')
+          .eq('house_id', houseId)
+          .or('name.eq.$memberName,nickname.eq.$memberName')
+          .maybeSingle();
+
+      if (profile == null) return;
+      final memberId = profile['id'] as String;
+
+      final rentRecord = await _client
+          .from('rent_records')
+          .select('id')
+          .eq('house_id', houseId)
+          .eq('year', year)
+          .eq('month', month)
+          .maybeSingle();
+
+      if (rentRecord == null) return;
+
+      await _client
+          .from('member_payments')
+          .update({
+            'is_paid': true,
+            'verified_by': _userId,
+            'verified_at': DateTime.now().toIso8601String(),
+          })
+          .eq('rent_record_id', rentRecord['id'] as String)
+          .eq('member_id', memberId);
+    } catch (e) {
+      Log.e('RentRepo', 'verifyPayment failed', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber}) async {
     try {
       final houseId = await _getHouseId();
       if (houseId == null) return;
@@ -165,6 +210,8 @@ class SupabaseRentRepository implements IRentRepository {
         'month': month,
         'total_rent': totalRent,
         'total_wifi': totalWifi,
+        if (bankName != null) 'bank_name': bankName,
+        if (bankAccountNumber != null) 'bank_account_number': bankAccountNumber,
       }, onConflict: 'house_id,year,month');
 
       final record = await _client

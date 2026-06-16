@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/features/chores/models/chore.dart';
 import 'package:nesta/features/chores/providers/chores_provider.dart';
 import 'package:nesta/features/finance/providers/finance_provider.dart';
 import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/members/providers/members_provider.dart';
+import 'package:nesta/features/house/providers/house_provider.dart';
 import 'package:nesta/features/schedule/models/upcoming_task.dart';
 import 'package:nesta/features/schedule/providers/schedule_provider.dart';
 
@@ -18,8 +20,14 @@ class DashboardScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            ref.refresh(currentProfileProvider);
-            ref.refresh(houseStatsProvider);
+            ref.invalidate(currentProfileProvider);
+            await ref.read(currentProfileProvider.future);
+            ref.invalidate(houseProvider);
+            await ref.read(houseProvider.future);
+            ref.invalidate(houseStatsProvider);
+            await ref.read(houseStatsProvider.future);
+            ref.invalidate(todayChoresProvider);
+            await ref.read(todayChoresProvider.future);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -49,8 +57,10 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentProfileProvider);
+    final houseAsync = ref.watch(houseProvider);
     final name = profileAsync.valueOrNull?.name ?? 'User';
     final avatarUrl = profileAsync.valueOrNull?.avatarUrl;
+    final houseName = houseAsync.valueOrNull?.name ?? 'Rumahku';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,7 +74,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Kontrakan Bahagia',
+              houseName,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.neutral500,
               ),
@@ -89,42 +99,28 @@ class DashboardScreen extends ConsumerWidget {
   Widget _buildTodayDutyCard(BuildContext context) {
     return Consumer(
       builder: (context, ref, child) {
-        final dutyAsync = ref.watch(todayDutyProvider);
+        final choresAsync = ref.watch(todayChoresProvider);
 
-        return dutyAsync.when(
+        return choresAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => _buildErrorCard(context, err),
-          data: (chore) {
-            if (chore == null) {
-              return Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.neutral50,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppTheme.neutral200),
-                ),
-                child: const Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.check_circle_outline_rounded, size: 48, color: AppTheme.neutral400),
-                      SizedBox(height: 16),
-                      Text(
-                        'Istirahat Dulu!',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Kamu tidak ada jadwal piket hari ini.',
-                        style: TextStyle(color: AppTheme.neutral500),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+          data: (chores) {
+            if (chores.isEmpty) {
+              return _buildEmptyCard(context);
             }
-            final progress = chore.totalTasks > 0 ? chore.completedTasks / chore.totalTasks : 0.0;
-            final remaining = chore.totalTasks - chore.completedTasks;
-            
+
+            final allDone = chores.every((c) => c.completedTasks >= c.totalTasks);
+            if (allDone) {
+              return _buildThankYouCard(context);
+            }
+
+            final current = chores.firstWhere(
+              (c) => c.completedTasks < c.totalTasks,
+            );
+            final remainingRooms = chores.where((c) => c.completedTasks < c.totalTasks).toList();
+            final progress = current.totalTasks > 0 ? current.completedTasks / current.totalTasks : 0.0;
+            final remaining = current.totalTasks - current.completedTasks;
+
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -153,21 +149,56 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                       const Spacer(),
-                      const Icon(Icons.more_horiz_rounded, color: Colors.white),
+                      if (remainingRooms.length > 1)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Text(
+                            '+${remainingRooms.length - 1} ruangan lagi',
+                            style: const TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    chore.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${remainingRooms.indexOf(current) + 1}/${remainingRooms.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          current.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    remaining > 0 ? 'Ada $remaining tugas yang belum diselesaikan.' : 'Semua tugas selesai!',
+                    remaining > 0
+                        ? 'Ada $remaining tugas yang belum diselesaikan.'
+                        : 'Semua tugas selesai!',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
@@ -201,23 +232,133 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 24),
                       ElevatedButton(
-                        onPressed: () => context.push('/task/${chore.id}'),
+                        onPressed: () => context.push('/task/${current.id}'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppTheme.primary,
                           minimumSize: const Size(100, 40),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                        child: Text(chore.isStarted ? 'Lanjut' : 'Mulai'),
+                        child: Text(current.isStarted ? 'Lanjut' : 'Mulai'),
                       ),
                     ],
                   ),
+                  if (chores.length > 1) ...[
+                    const SizedBox(height: 20),
+                    const Divider(color: Colors.white24, height: 1),
+                    const SizedBox(height: 16),
+                    ...chores.take(3).map((c) => _buildRoomMiniTile(c)),
+                  ],
                 ],
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildRoomMiniTile(Chore chore) {
+    final done = chore.completedTasks >= chore.totalTasks;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            size: 16,
+            color: Colors.white.withOpacity(done ? 0.9 : 0.5),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              chore.title,
+              style: TextStyle(
+                color: Colors.white.withOpacity(done ? 0.9 : 0.6),
+                fontSize: 13,
+                fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(done ? 0.2 : 0.1),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              '${chore.completedTasks}/${chore.totalTasks}',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(done ? 0.9 : 0.5),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.neutral50,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.neutral200),
+      ),
+      child: const Center(
+        child: Column(
+          children: [
+            Icon(Icons.check_circle_outline_rounded, size: 48, color: AppTheme.neutral400),
+            SizedBox(height: 16),
+            Text(
+              'Istirahat Dulu!',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Kamu tidak ada jadwal piket hari ini.',
+              style: TextStyle(color: AppTheme.neutral500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThankYouCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.success, Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.celebration_rounded, size: 48, color: Colors.white),
+          SizedBox(height: 16),
+          Text(
+            'Terima Kasih!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Semua piket hari ini sudah selesai. Good job!',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

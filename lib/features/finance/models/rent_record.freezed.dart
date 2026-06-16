@@ -504,8 +504,8 @@ return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _MemberPayment implements MemberPayment {
-  const _MemberPayment({required this.memberName, required this.isPaid, this.proofPhoto});
+class _MemberPayment extends MemberPayment {
+  const _MemberPayment({required this.memberName, required this.isPaid, this.proofPhoto}): super._();
   factory _MemberPayment.fromJson(Map<String, dynamic> json) => _$MemberPaymentFromJson(json);
 
 @override final  String memberName;

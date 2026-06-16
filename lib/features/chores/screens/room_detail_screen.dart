@@ -35,8 +35,10 @@ class RoomDetailScreen extends ConsumerWidget {
         error: (e, _) => const Center(child: Text('Gagal memuat tugas')),
         data: (items) => RefreshIndicator(
           onRefresh: () async {
-            ref.refresh(roomsProvider);
-            ref.refresh(checklistProvider(roomId));
+            ref.invalidate(roomsProvider);
+            await ref.read(roomsProvider.future);
+            ref.invalidate(checklistProvider(roomId));
+            await ref.read(checklistProvider(roomId).future);
           },
           child: items.isEmpty
               ? SingleChildScrollView(

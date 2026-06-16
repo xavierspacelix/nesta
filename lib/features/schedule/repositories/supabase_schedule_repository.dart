@@ -150,6 +150,7 @@ class SupabaseScheduleRepository implements IScheduleRepository {
         date: DateTime.parse(json['assigned_date'] as String),
         roomName: roomName,
         assignedUser: userName,
+        assignedTo: json['assigned_to'] as String,
         status: _statusFromDb(json['status'] as String),
       );
     }).toList();
@@ -175,11 +176,9 @@ class SupabaseScheduleRepository implements IScheduleRepository {
       final today = DateTime.now();
       final dateStr = _dateStr(today);
 
-      await _generateRotations(houseId, today, today);
-
       final response = await _client
           .from('assignments')
-          .select('id, assigned_date, status, rooms(name), profiles(name, nickname)')
+          .select('id, assigned_to, assigned_date, status, rooms(name), profiles(name, nickname)')
           .eq('house_id', houseId)
           .eq('assigned_date', dateStr);
 
@@ -200,14 +199,12 @@ class SupabaseScheduleRepository implements IScheduleRepository {
       final weekStart = today.subtract(Duration(days: today.weekday - 1));
       final weekEnd = weekStart.add(const Duration(days: 6));
 
-      await _generateRotations(houseId, weekStart, weekEnd);
-
       final startStr = _dateStr(weekStart);
       final endStr = _dateStr(weekEnd);
 
       final response = await _client
           .from('assignments')
-          .select('id, assigned_date, status, rooms(name), profiles(name, nickname)')
+          .select('id, assigned_to, assigned_date, status, rooms(name), profiles(name, nickname)')
           .eq('house_id', houseId)
           .gte('assigned_date', startStr)
           .lte('assigned_date', endStr)
@@ -230,14 +227,12 @@ class SupabaseScheduleRepository implements IScheduleRepository {
       final monthStart = DateTime(today.year, today.month, 1);
       final monthEnd = DateTime(today.year, today.month + 1, 0);
 
-      await _generateRotations(houseId, monthStart, monthEnd);
-
       final startStr = _dateStr(monthStart);
       final endStr = _dateStr(monthEnd);
 
       final response = await _client
           .from('assignments')
-          .select('id, assigned_date, status, rooms(name), profiles(name, nickname)')
+          .select('id, assigned_to, assigned_date, status, rooms(name), profiles(name, nickname)')
           .eq('house_id', houseId)
           .gte('assigned_date', startStr)
           .lte('assigned_date', endStr)
@@ -261,8 +256,6 @@ class SupabaseScheduleRepository implements IScheduleRepository {
 
       final todayStr = _dateStr(today);
       final endStr = _dateStr(weekEnd);
-
-      await _generateRotations(houseId, today, weekEnd);
 
       final response = await _client
           .from('assignments')

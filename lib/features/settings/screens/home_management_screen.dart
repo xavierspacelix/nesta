@@ -31,6 +31,8 @@ class HomeManagementScreen extends ConsumerStatefulWidget {
 class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
   final _rentController = TextEditingController();
   final _wifiController = TextEditingController();
+  final _bankNameController = TextEditingController();
+  final _bankAccountController = TextEditingController();
   bool _saving = false;
   bool _generating = false;
   bool _initialized = false;
@@ -39,6 +41,8 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
   void dispose() {
     _rentController.dispose();
     _wifiController.dispose();
+    _bankNameController.dispose();
+    _bankAccountController.dispose();
     super.dispose();
   }
 
@@ -51,6 +55,8 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     if (current != null) {
       _rentController.text = current.totalRent.toString();
       _wifiController.text = current.totalWifi.toString();
+      _bankNameController.text = current.bankName ?? '';
+      _bankAccountController.text = current.bankAccountNumber ?? '';
     }
     _initialized = true;
   }
@@ -65,10 +71,17 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
       return;
     }
 
+    final bankName = _bankNameController.text.trim();
+    final bankAccount = _bankAccountController.text.trim();
+
     setState(() => _saving = true);
     try {
       final now = DateTime.now();
-      await ref.read(_rentRepoProvider).setRentAmounts(now.year, now.month, rent, wifi);
+      await ref.read(_rentRepoProvider).setRentAmounts(
+        now.year, now.month, rent, wifi,
+        bankName: bankName.isNotEmpty ? bankName : null,
+        bankAccountNumber: bankAccount.isNotEmpty ? bankAccount : null,
+      );
       ref.invalidate(rentHistoryProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -195,6 +208,23 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
             decoration: const InputDecoration(
               labelText: 'Biaya WiFi (Rp)',
               hintText: 'Contoh: 300000',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _bankNameController,
+            decoration: const InputDecoration(
+              labelText: 'Nama Bank',
+              hintText: 'Contoh: BCA',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _bankAccountController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'No. Rekening',
+              hintText: 'Contoh: 1234567890',
             ),
           ),
           const SizedBox(height: 16),
