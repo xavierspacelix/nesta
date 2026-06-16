@@ -2,11 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/providers/progress_provider.dart';
-import 'package:nesta/features/members/providers/members_provider.dart';
-import '../../activity/providers/activity_provider.dart';
 import '../models/task_detail.dart';
 import '../repositories/task_detail_repository.dart';
 import '../repositories/supabase_task_detail_repository.dart';
+import 'task_verification_provider.dart';
 
 final taskDetailRepositoryProvider = Provider<ITaskDetailRepository>((ref) {
   return SupabaseTaskDetailRepository(Supabase.instance.client);
@@ -55,17 +54,15 @@ class TaskDetailNotifier extends FamilyAsyncNotifier<TaskDetail, String> {
       ref.read(checklistProgressChangedProvider.notifier).state++;
 
       final allDone = updatedList.every((i) => i.isCompleted);
-      if (allDone) {
-        final membersRepo = ref.read(membersRepositoryProvider);
-        final houseId = await membersRepo.getHouseId(userId);
-        if (houseId != null) {
-          final activityRepo = ref.read(activityRepositoryProvider);
-          await activityRepo.createActivity(
-            houseId: houseId,
-            userId: userId,
-            description: 'Menyelesaikan piket ${current.roomName}',
-            category: 'chore',
-          );
+      if (allDone && current.beforePhoto != null && current.afterPhoto != null) {
+        final profile = await Supabase.instance.client
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+        if (profile?['role'] == 'admin') {
+          final verifRepo = ref.read(taskVerificationRepositoryProvider);
+          await verifRepo.approveTask(arg);
         }
       }
     } catch (e) {

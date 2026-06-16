@@ -4,6 +4,7 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/finance/models/electricity_purchase.dart';
 import 'package:nesta/features/finance/providers/electricity_provider.dart';
@@ -489,6 +490,16 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                       await ref
                           .read(electricityRepositoryProvider)
                           .addPurchase(amount, currentUser, _proofPhoto);
+                      final authState = ref.read(authProvider);
+                      final activityRepo = ref.read(activityRepositoryProvider);
+                      if (authState.houseId != null) {
+                        await activityRepo.createActivity(
+                          houseId: authState.houseId!,
+                          userId: authState.userId ?? '',
+                          description: 'membeli listrik',
+                          category: 'fine',
+                        );
+                      }
                       ref.invalidate(electricityPurchasesProvider);
                       _amountController.clear();
                       setState(() {

@@ -16,6 +16,15 @@ class SupabaseRentRepository implements IRentRepository {
 
   String get _userId => _client.auth.currentUser!.id;
 
+  Future<bool> _isOwner() async {
+    final profile = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', _userId)
+        .maybeSingle();
+    return profile?['role'] == 'admin';
+  }
+
   Future<String?> _getHouseId() async {
     final profile = await _client
         .from('profiles')
@@ -150,7 +159,56 @@ class SupabaseRentRepository implements IRentRepository {
 
   @override
   Future<void> uploadProof(int year, int month, String memberId, String photoUrl) async {
-    await _updatePayment(year, month, memberId, photoUrl);
+    final isOwner = await _isOwner();
+    if (isOwner) {
+      final houseId = await _getHouseId();
+      if (houseId == null) return;
+
+      final rentRecord = await _client
+          .from('rent_records')
+          .select('id')
+          .eq('house_id', houseId)
+          .eq('year', year)
+          .eq('month', month)
+          .maybeSingle();
+      if (rentRecord == null) return;
+
+      await _client
+          .from('member_payments')
+          .upsert({
+            'rent_record_id': rentRecord['id'] as String,
+            'member_id': memberId,
+            'proof_photo': photoUrl,
+            'is_paid': true,
+            'verified_by': _userId,
+            'verified_at': DateTime.now().toIso8601String(),
+          }, onConflict: 'rent_record_id, member_id');
+
+      // Auto-generate next month
+      final unpaid = await _client
+          .from('member_payments')
+          .select('id')
+          .eq('rent_record_id', rentRecord['id'] as String)
+          .eq('is_paid', false);
+      if (unpaid.isEmpty) {
+        final nextRent = await _client
+            .from('rent_records')
+            .select('total_rent, total_wifi, bank_name, bank_account_number, due_date')
+            .eq('id', rentRecord['id'] as String)
+            .single();
+        final next = DateTime(year, month + 1);
+        await setRentAmounts(
+          next.year, next.month,
+          nextRent['total_rent'] as int,
+          nextRent['total_wifi'] as int,
+          bankName: nextRent['bank_name'] as String?,
+          bankAccountNumber: nextRent['bank_account_number'] as String?,
+          dueDate: nextRent['due_date'] as int?,
+        );
+      }
+    } else {
+      await _updatePayment(year, month, memberId, photoUrl);
+    }
   }
 
   @override

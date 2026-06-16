@@ -63,6 +63,105 @@ Last updated: 2026-06-17
 **Pattern notes:**
 Tile background shifts based on payment status. Status label uses pill badge with matching color icon.
 
+## Category Card
+
+File: `lib/features/finance/screens/financial_dashboard_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Background       | Colors.white                   |
+| Border           | AppTheme.neutral200            |
+| Border radius    | BorderRadius.circular(16)      |
+| Shadow           | neutral200.withOpacity(0.3), blur 8, offset (0,2) |
+| Padding          | EdgeInsets.all(16)             |
+| Icon container  | 44x44, color.withOpacity(0.1), borderRadius: 12 |
+| Icon size        | 22                             |
+| Label text       | FontWeight.w600, fontSize: 15  |
+| Subtitle text    | fontSize: 12, color: neutral500 |
+| Trailing text    | FontWeight.w700, fontSize: 15, color: color |
+| Chevron          | chevron_right_rounded, neutral400, size: 20 |
+
+**Pattern notes:**
+Row layout with icon container on left, label+subtitle column in middle, colored amount + chevron on right. Used for navigational cards (Denda, Galon, Listrik).
+
+## Month Selector
+
+File: `lib/features/finance/screens/financial_dashboard_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Background       | Colors.white                   |
+| Border           | AppTheme.neutral200            |
+| Border radius    | BorderRadius.circular(12)      |
+| Padding          | EdgeInsets.symmetric(h: 12, v: 8) |
+| Arrow btn bg     | AppTheme.neutral100, borderRadius: 8, padding: 8 |
+| Arrow icon       | 20, disabled: neutral300, enabled: neutral600 |
+| Month text       | FontWeight.w700, fontSize: 16  |
+| Subtitle text    | fontSize: 11, color: neutral500 |
+
+## Expense Analytics Card
+
+File: `lib/features/finance/screens/financial_dashboard_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Background       | Colors.white                   |
+| Border           | AppTheme.neutral200            |
+| Border radius    | BorderRadius.circular(16)      |
+| Shadow           | neutral200.withOpacity(0.3), blur 8, offset (0,2) |
+| Padding          | EdgeInsets.all(20)             |
+| Header icon bg   | primary.withOpacity(0.1), 36x36, borderRadius: 10 |
+| Header icon      | 20                             |
+| Dot indicator    | 8x8, shape: BoxShape.circle    |
+| Row label        | fontSize: 13                   |
+| Row amount       | FontWeight.w600, fontSize: 14  |
+| Total label      | FontWeight.w700, fontSize: 16  |
+| Total amount     | FontWeight.w700, fontSize: 18, color: primary |
+
+**Pattern notes:**
+Section header with icon container + title, followed by expense rows with colored dot indicators, divider, then total row. Conditional rows based on value > 0.
+
+## Schedule View Toggle
+
+File: `lib/features/schedule/screens/schedule_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Container bg     | AppTheme.neutral100            |
+| Container radius | BorderRadius.circular(14)      |
+| Container padding| EdgeInsets.all(4)              |
+| Container height | 44                             |
+| Pill bg          | Colors.white                   |
+| Pill radius      | BorderRadius.circular(10)      |
+| Pill shadow      | black.withOpacity(0.06), blur 8, offset (0,2) |
+| Item icon        | 15, selected: primary, unselected: neutral500 |
+| Item label       | fontSize: 13, fontWeight: w600, selected: primary, unselected: neutral500 |
+| Animation        | AnimatedPositioned 250ms easeInOutCubic, AnimatedOpacity 200ms |
+
+**Pattern notes:**
+Segmented control with animated sliding pill. Three options: Harian (today), Mingguan (weekly), Bulanan (monthly). Icon + label row centered in each segment.
+
+## Dashboard Stat Card
+
+File: `lib/features/dashboard/screens/dashboard_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Background       | AppTheme.neutral50             |
+| Border radius    | BorderRadius.circular(16)      |
+| Padding          | EdgeInsets.all(16)             |
+| Icon size        | 24                             |
+| Value text       | headlineSmall, fontWeight: w700 |
+| Label text       | bodySmall, color: neutral500   |
+
+**Pattern notes:**
+Simple card with icon on top, large value in middle, small label below. Used for quick stats (Tugas Selesai, Denda Tertunggak, dll).
+
 ## Bottom Sheet — Payment Action
 
 File: `lib/features/finance/screens/rent_screen.dart`

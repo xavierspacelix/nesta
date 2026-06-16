@@ -10,6 +10,15 @@ class SupabaseWaterRepository implements IWaterRepository {
 
   String get _userId => _client.auth.currentUser!.id;
 
+  Future<bool> _isOwner() async {
+    final profile = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', _userId)
+        .maybeSingle();
+    return profile?['role'] == 'admin';
+  }
+
   Future<String?> _getHouseId() async {
     final profile = await _client
         .from('profiles')
@@ -106,11 +115,15 @@ class SupabaseWaterRepository implements IWaterRepository {
       if (houseId == null) return;
 
       final schedule = await getSchedule();
+      final isOwner = await _isOwner();
 
       await _client.from('water_purchases').insert({
         'house_id': houseId,
         'buyer_name': schedule.nextBuyer,
         if (proofPhoto != null) 'proof_photo': proofPhoto,
+        if (isOwner) 'is_verified': true,
+        if (isOwner) 'verified_by': _userId,
+        if (isOwner) 'verified_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
       Log.e('WaterRepo', 'markPurchased failed', e);
@@ -121,11 +134,32 @@ class SupabaseWaterRepository implements IWaterRepository {
   @override
   Future<void> verifyPurchase(String purchaseId) async {
     try {
+      final purchase = await _client
+          .from('water_purchases')
+          .select('buyer_name, house_id')
+          .eq('id', purchaseId)
+          .single();
+
       await _client.from('water_purchases').update({
         'is_verified': true,
         'verified_at': DateTime.now().toIso8601String(),
         'verified_by': _userId,
       }).eq('id', purchaseId);
+
+      final buyerProfile = await _client
+          .from('profiles')
+          .select('id')
+          .eq('name', purchase['buyer_name'] as String)
+          .maybeSingle();
+      if (buyerProfile != null) {
+        await _client.from('activity_feed').insert({
+          'house_id': purchase['house_id'] as String,
+          'user_id': _userId,
+          'target_user_id': buyerProfile['id'] as String,
+          'description': 'memverifikasi pembelian galon kamu',
+          'category': 'fine',
+        });
+      }
     } catch (e) {
       Log.e('WaterRepo', 'verifyPurchase failed', e);
       rethrow;

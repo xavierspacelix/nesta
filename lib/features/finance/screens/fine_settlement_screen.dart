@@ -5,6 +5,7 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/finance/models/fine_entry.dart';
 import 'package:nesta/features/finance/providers/fine_provider.dart';
@@ -133,6 +134,16 @@ class FineSettlementScreen extends ConsumerWidget {
         bytes: picked.bytes,
       );
       await ref.read(fineRepositoryProvider).uploadProof(fine.id, url);
+      final authState = ref.read(authProvider);
+      final activityRepo = ref.read(activityRepositoryProvider);
+      if (authState.houseId != null) {
+        await activityRepo.createActivity(
+          houseId: authState.houseId!,
+          userId: authState.userId ?? '',
+          description: 'melakukan pembayaran denda',
+          category: 'fine',
+        );
+      }
       ref.invalidate(fineByIdProvider(fine.id));
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -235,6 +246,17 @@ class FineSettlementScreen extends ConsumerWidget {
   Future<void> _handleVerify(BuildContext context, WidgetRef ref, FineEntry fine) async {
     try {
       await ref.read(fineRepositoryProvider).verifyPayment(fine.id);
+      final authState = ref.read(authProvider);
+      final activityRepo = ref.read(activityRepositoryProvider);
+      if (authState.houseId != null) {
+        await activityRepo.createActivity(
+          houseId: authState.houseId!,
+          userId: authState.userId ?? '',
+          description: 'memverifikasi pembayaran kamu',
+          category: 'fine',
+          targetUserId: fine.memberId,
+        );
+      }
       ref.invalidate(fineByIdProvider(fine.id));
       ref.invalidate(currentFinesProvider);
       ref.invalidate(fineHistoryProvider);

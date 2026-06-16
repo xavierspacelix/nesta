@@ -9,6 +9,7 @@ abstract class IActivityRepository {
     required String userId,
     required String description,
     required String category,
+    String? targetUserId,
   });
 }
 
@@ -247,6 +248,7 @@ class MockActivityRepository implements IActivityRepository {
     required String userId,
     required String description,
     required String category,
+    String? targetUserId,
   }) async {
     await Future.delayed(const Duration(milliseconds: 100));
   }

@@ -422,7 +422,7 @@ class DashboardScreen extends ConsumerWidget {
                   children: [
                     Expanded(child: _buildStatCard(context, 'Performa Bulan Ini', stats.monthlyPerformance, Icons.insights_rounded, AppTheme.primary)),
                     const SizedBox(width: 16),
-                    Expanded(child: _buildStatCard(context, 'Tagihan (Besok)', stats.upcomingBills, Icons.bolt_rounded, AppTheme.secondary)),
+                    Expanded(child: _buildStatCard(context, 'Sewa', _sewaDisplay(stats.upcomingBills), Icons.home_work_rounded, _sewaIconColor(stats.upcomingBills), textColor: _sewaTextColor(stats.upcomingBills))),
                   ],
                 ),
               ],
@@ -433,7 +433,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color iconColor, {Color? textColor}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -443,12 +443,13 @@ class DashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: iconColor, size: 24),
           const SizedBox(height: 12),
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -589,6 +590,29 @@ class DashboardScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  String _sewaDisplay(String value) {
+    final idx = value.indexOf('|');
+    return idx == -1 ? value : value.substring(0, idx);
+  }
+
+  Color _sewaIconColor(String value) {
+    if (value == 'Lunas') return AppTheme.primary;
+    if (value == '-') return AppTheme.neutral500;
+    final idx = value.indexOf('|');
+    if (idx == -1) return AppTheme.primary;
+    final dueDay = int.tryParse(value.substring(idx + 1));
+    if (dueDay == null) return AppTheme.primary;
+    final now = DateTime.now();
+    if (now.day > dueDay) return AppTheme.error;
+    if (now.day >= dueDay - 7) return AppTheme.warning;
+    return AppTheme.primary;
+  }
+
+  Color? _sewaTextColor(String value) {
+    if (value == 'Lunas' || value == '-') return null;
+    return _sewaIconColor(value);
   }
 
   Widget _buildErrorCard(BuildContext context, Object error) {

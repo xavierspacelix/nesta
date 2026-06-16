@@ -7,6 +7,7 @@ import 'package:nesta/features/finance/models/water_schedule.dart';
 import 'package:nesta/features/finance/providers/water_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/members/providers/members_provider.dart';
 
@@ -415,6 +416,16 @@ class WaterScreen extends ConsumerWidget {
                             bytes: picked.bytes,
                           );
                           await ref.read(waterRepositoryProvider).markPurchased(proofPhoto: url);
+                          final authState = ref.read(authProvider);
+                          final activityRepo = ref.read(activityRepositoryProvider);
+                          if (authState.houseId != null) {
+                            await activityRepo.createActivity(
+                              houseId: authState.houseId!,
+                              userId: authState.userId ?? '',
+                              description: 'membeli galon air',
+                              category: 'fine',
+                            );
+                          }
                           ref.invalidate(waterScheduleProvider);
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(

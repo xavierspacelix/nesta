@@ -25,6 +25,7 @@ Read these files in this exact order before implementing any feature:
 6. context/library-docs.md
 7. context/build-plan.md
 8. context/progress-tracker.md
+9. context/auto-update.md
 
 Never skip this sequence.
 

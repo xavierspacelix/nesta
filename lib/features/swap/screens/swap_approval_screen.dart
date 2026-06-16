@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/models/notification_type.dart';
 import 'package:nesta/core/providers/notification_provider.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
+import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/swap/models/swap_request.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/features/swap/providers/swap_provider.dart';
@@ -48,10 +50,21 @@ class SwapApprovalScreen extends ConsumerWidget {
                   onApprove: () async {
                     try {
                       await ref.read(swapRepositoryProvider).approveRequest(requests[index].id);
+                      final req = requests[index];
+                      final authState = ref.read(authProvider);
+                      final activityRepo = ref.read(activityRepositoryProvider);
+                      if (authState.houseId != null) {
+                        await activityRepo.createActivity(
+                          houseId: authState.houseId!,
+                          userId: authState.userId ?? '',
+                          description: 'menyetujui tukar jadwal dengan ${req.requesterName}',
+                          category: 'swap',
+                        );
+                      }
                       ref.read(notificationServiceProvider).notify(
                         NotificationType.swapApproved,
                         'Tukar Jadwal Disetujui',
-                        '${requests[index].requesterName} — ${requests[index].targetMemberName}',
+                        '${req.requesterName} — ${req.targetMemberName}',
                       );
                       ref.invalidate(pendingSwapsProvider);
                       if (!context.mounted) return;
@@ -69,10 +82,21 @@ class SwapApprovalScreen extends ConsumerWidget {
                   onReject: () async {
                     try {
                       await ref.read(swapRepositoryProvider).rejectRequest(requests[index].id);
+                      final req = requests[index];
+                      final authState = ref.read(authProvider);
+                      final activityRepo = ref.read(activityRepositoryProvider);
+                      if (authState.houseId != null) {
+                        await activityRepo.createActivity(
+                          houseId: authState.houseId!,
+                          userId: authState.userId ?? '',
+                          description: 'menolak tukar jadwal dengan ${req.requesterName}',
+                          category: 'swap',
+                        );
+                      }
                       ref.read(notificationServiceProvider).notify(
                         NotificationType.swapRejected,
                         'Tukar Jadwal Ditolak',
-                        '${requests[index].requesterName} — ${requests[index].targetMemberName}',
+                        '${req.requesterName} — ${req.targetMemberName}',
                       );
                       ref.invalidate(pendingSwapsProvider);
                       if (!context.mounted) return;

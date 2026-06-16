@@ -555,8 +555,8 @@ $Res call({
 
 
 
-}
 
+}
 /// @nodoc
 class __$MemberPaymentCopyWithImpl<$Res>
     implements _$MemberPaymentCopyWith<$Res> {

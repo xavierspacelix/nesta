@@ -10,6 +10,15 @@ class SupabaseFineRepository implements IFineRepository {
 
   String get _userId => _client.auth.currentUser!.id;
 
+  Future<bool> _isOwner() async {
+    final profile = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', _userId)
+        .maybeSingle();
+    return profile?['role'] == 'admin';
+  }
+
   Future<String?> _getHouseId() async {
     final profile = await _client
         .from('profiles')
@@ -166,12 +175,15 @@ class SupabaseFineRepository implements IFineRepository {
   @override
   Future<void> uploadProof(String fineId, String photoUrl) async {
     try {
+      final isOwner = await _isOwner();
       await _client
           .from('fines')
           .update({
             'proof_photo': photoUrl,
-            'status': 'pending_verification',
+            'status': isOwner ? 'paid' : 'pending_verification',
             'paid_by': _userId,
+            if (isOwner) 'verified_by': _userId,
+            if (isOwner) 'verified_at': DateTime.now().toIso8601String(),
           })
           .eq('id', fineId);
     } catch (e) {

@@ -19,7 +19,7 @@ abstract class FeedItem with _$FeedItem {
       _$FeedItemFromJson(json);
 
   String get timeAgo {
-    final diff = DateTime.now().difference(timestamp);
+    final diff = DateTime.now().difference(timestamp.toLocal());
     if (diff.inMinutes < 1) return 'Baru saja';
     if (diff.inMinutes < 60) return '${diff.inMinutes} menit yang lalu';
     if (diff.inHours < 24) return '${diff.inHours} jam yang lalu';

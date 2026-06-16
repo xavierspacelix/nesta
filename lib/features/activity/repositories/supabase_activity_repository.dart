@@ -31,6 +31,7 @@ class SupabaseActivityRepository implements IActivityRepository {
           .from('activity_feed')
           .select('id, description, category, created_at')
           .eq('house_id', houseId)
+          .or('target_user_id.is.null,target_user_id.eq.${_userId}')
           .order('created_at', ascending: false)
           .limit(5);
 
@@ -59,9 +60,10 @@ class SupabaseActivityRepository implements IActivityRepository {
         .from('activity_feed')
         .select('''
           id, description, category, created_at,
-          profiles(name, nickname)
+          profiles!activity_feed_user_id_fkey(name, nickname)
         ''')
           .eq('house_id', houseId)
+          .or('target_user_id.is.null,target_user_id.eq.${_userId}')
           .order('created_at', ascending: false);
 
       return response.map((json) {
@@ -106,12 +108,14 @@ class SupabaseActivityRepository implements IActivityRepository {
     required String userId,
     required String description,
     required String category,
+    String? targetUserId,
   }) async {
     try {
       await _client.from('activity_feed').insert({
         'house_id': houseId,
         'user_id': userId,
         'description': description,
+        'target_user_id': targetUserId,
         'category': category,
       });
     } catch (e) {

@@ -96,10 +96,27 @@ class SupabaseTaskVerificationRepository implements ITaskVerificationRepository 
   @override
   Future<void> approveTask(String taskId) async {
     try {
+      final assignment = await _client
+          .from('assignments')
+          .select('assigned_to, rooms(name), house_id')
+          .eq('id', taskId)
+          .single();
+
       await _client.from('assignments').update({
         'status': 'completed',
         'completed_at': DateTime.now().toIso8601String(),
       }).eq('id', taskId);
+
+      final roomName = (assignment['rooms'] as Map)['name'] as String;
+      final houseId = assignment['house_id'] as String;
+      final assignedUserId = assignment['assigned_to'] as String;
+
+      await _client.from('activity_feed').insert({
+        'house_id': houseId,
+        'user_id': assignedUserId,
+        'description': 'Menyelesaikan piket $roomName',
+        'category': 'chore',
+      });
     } catch (e) {
       Log.e('TaskVerifRepo', 'approveTask failed', e);
       rethrow;

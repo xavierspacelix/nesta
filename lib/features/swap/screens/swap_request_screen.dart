@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/models/notification_type.dart';
 import 'package:nesta/core/providers/notification_provider.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/swap/providers/swap_provider.dart';
 
@@ -117,6 +118,16 @@ class _SwapRequestScreenState extends ConsumerState<SwapRequestScreen> {
       _selectedDate!,
       _reasonController.text.trim(),
     );
+    final authState = ref.read(authProvider);
+    final activityRepo = ref.read(activityRepositoryProvider);
+    if (authState.houseId != null) {
+      await activityRepo.createActivity(
+        houseId: authState.houseId!,
+        userId: authState.userId ?? '',
+        description: 'mengajukan tukar jadwal dengan $_selectedMember',
+        category: 'swap',
+      );
+    }
     ref.read(notificationServiceProvider).notify(
       NotificationType.swapRequest,
       'Permintaan Tukar Jadwal',

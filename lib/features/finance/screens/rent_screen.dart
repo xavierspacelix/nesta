@@ -6,9 +6,11 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
+import 'package:nesta/features/activity/providers/activity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/finance/models/rent_record.dart';
 import 'package:nesta/features/finance/providers/rent_provider.dart';
+import 'package:nesta/features/finance/providers/finance_provider.dart';
 import 'package:nesta/features/members/providers/members_provider.dart';
 import 'package:nesta/core/widgets/auth_image.dart';
 
@@ -19,6 +21,7 @@ class RentScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rentAsync = ref.watch(rentHistoryProvider);
     final authState = ref.watch(authProvider);
+    final selectedDate = ref.watch(selectedMonthProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,64 +33,69 @@ class RentScreen extends ConsumerWidget {
       body: rentAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
-        data: (records) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(rentHistoryProvider);
-            await ref.read(rentHistoryProvider.future);
-          },
-          child: records.isEmpty
-              ? SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 64,
-                          color: AppTheme.neutral300,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Belum ada catatan sewa',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.neutral500,
+        data: (records) {
+          final match = records.where(
+            (r) => r.year == selectedDate.year && r.month == selectedDate.month,
+          );
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(rentHistoryProvider);
+              await ref.read(rentHistoryProvider.future);
+            },
+            child: match.isEmpty
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 64,
+                            color: AppTheme.neutral300,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Atur biaya sewa dan WiFi di Kelola Rumah',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.neutral400,
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Belum ada catatan sewa',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.neutral500,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Atur biaya sewa dan WiFi di Kelola Rumah',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.neutral400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: _RentMonthCard(
+                      record: match.first,
+                      currentUserName: authState.userName,
+                      onMemberTap: (memberName) {
+                        final payment = match.first.payments.firstWhereOrNull(
+                          (p) => p.memberName == memberName,
+                        );
+                        if (payment == null) return;
+                        _showPaymentSheet(
+                          context,
+                          ref,
+                          match.first,
+                          payment,
+                        );
+                      },
                     ),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: records.length,
-                  itemBuilder: (context, index) => _RentMonthCard(
-                    record: records[index],
-                    currentUserName: authState.userName,
-                    onMemberTap: (memberName) {
-                      final payment = records[index].payments.firstWhereOrNull(
-                        (p) => p.memberName == memberName,
-                      );
-                      if (payment == null) return;
-                      _showPaymentSheet(
-                        context,
-                        ref,
-                        records[index],
-                        payment,
-                      );
-                    },
-                  ),
-                ),
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -375,6 +383,17 @@ class RentScreen extends ConsumerWidget {
                 await ref
                     .read(rentRepositoryProvider)
                     .verifyPayment(record.year, record.month, payment.memberId);
+                final authState = ref.read(authProvider);
+                final activityRepo = ref.read(activityRepositoryProvider);
+                if (authState.houseId != null) {
+                  await activityRepo.createActivity(
+                    houseId: authState.houseId!,
+                    userId: authState.userId ?? '',
+                    description: 'memverifikasi pembayaran kamu',
+                    category: 'fine',
+                    targetUserId: payment.memberId,
+                  );
+                }
                 ref.invalidate(rentHistoryProvider);
                 if (!context.mounted) return;
                 Navigator.pop(context);
@@ -434,6 +453,16 @@ class RentScreen extends ConsumerWidget {
             await ref
                 .read(rentRepositoryProvider)
                 .uploadProof(record.year, record.month, payment.memberId, url);
+            final authState = ref.read(authProvider);
+            final activityRepo = ref.read(activityRepositoryProvider);
+            if (authState.houseId != null) {
+              await activityRepo.createActivity(
+                  houseId: authState.houseId!,
+                  userId: authState.userId ?? '',
+                  description: 'melakukan pembayaran sewa',
+                  category: 'fine',
+                );
+            }
             ref.invalidate(rentHistoryProvider);
             if (ctx.mounted) Navigator.pop(ctx);
             if (!context.mounted) return;

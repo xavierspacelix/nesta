@@ -105,7 +105,8 @@ class ActivityFeedScreen extends ConsumerWidget {
     final olderItems = <FeedItem>[];
 
     for (final item in items) {
-      final itemDate = DateTime(item.timestamp.year, item.timestamp.month, item.timestamp.day);
+      final local = item.timestamp.toLocal();
+      final itemDate = DateTime(local.year, local.month, local.day);
       if (itemDate == today) {
         todayItems.add(item);
       } else if (itemDate == yesterday) {
@@ -137,7 +138,7 @@ class _FeedTile extends StatelessWidget {
       FeedCategory.chore => (Icons.cleaning_services_rounded, AppTheme.success, 'task selesai'),
       FeedCategory.photo => (Icons.camera_alt_rounded, AppTheme.secondary, 'foto diunggah'),
       FeedCategory.swap => (Icons.swap_horiz_rounded, AppTheme.primary, 'tukar jadwal'),
-      FeedCategory.fine => (Icons.warning_amber_rounded, AppTheme.error, 'denda'),
+      FeedCategory.fine => (Icons.receipt_rounded, AppTheme.warning, 'transaksi'),
     };
 
     return Row(

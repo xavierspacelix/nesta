@@ -64,28 +64,97 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   Widget _buildViewToggle(BuildContext context, WidgetRef ref, ScheduleView view) {
+    final _toggleNotifier = ref.watch(scheduleViewProvider.notifier);
+    final items = const [
+      (ScheduleView.today, Icons.today_rounded, 'Harian'),
+      (ScheduleView.weekly, Icons.calendar_view_week_rounded, 'Mingguan'),
+      (ScheduleView.monthly, Icons.calendar_month_rounded, 'Bulanan'),
+    ];
+    final selectedIndex = items.indexWhere((i) => i.$1 == view);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<ScheduleView>(
-          segments: const [
-            ButtonSegment(value: ScheduleView.today, label: Text('Harian'), icon: Icon(Icons.today_rounded, size: 16)),
-            ButtonSegment(value: ScheduleView.weekly, label: Text('Mingguan'), icon: Icon(Icons.calendar_view_week_rounded, size: 16)),
-            ButtonSegment(value: ScheduleView.monthly, label: Text('Bulanan'), icon: Icon(Icons.calendar_month_rounded, size: 16)),
-          ],
-          selected: {view},
-          onSelectionChanged: (v) {
-            ref.read(scheduleViewProvider.notifier).state = v.first;
-            if (v.first != ScheduleView.weekly) {
-              ref.read(_selectedDateProvider.notifier).state = DateTime.now();
-            }
-          },
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 8) / 3;
+
+          return Container(
+            height: 44,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.neutral100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOutCubic,
+                  left: selectedIndex * (itemWidth + 4),
+                  width: itemWidth,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Row(
+                  children: List.generate(items.length, (i) {
+                    final (v, icon, label) = items[i];
+                    final isSelected = i == selectedIndex;
+                    return SizedBox(
+                      width: itemWidth,
+                      height: 36,
+                      child: GestureDetector(
+                        onTap: () {
+                          _toggleNotifier.state = v;
+                          if (v != ScheduleView.weekly) {
+                            ref.read(_selectedDateProvider.notifier).state = DateTime.now();
+                          }
+                        },
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: isSelected ? 1.0 : 0.6,
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  icon,
+                                  size: 15,
+                                  color: isSelected ? AppTheme.primary : AppTheme.neutral500,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected ? AppTheme.primary : AppTheme.neutral500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
