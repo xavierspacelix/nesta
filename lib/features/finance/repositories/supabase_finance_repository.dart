@@ -80,16 +80,25 @@ class SupabaseFinanceRepository implements IFinanceRepository {
       String upcomingBills = '-';
       final latestRent = await _client
           .from('rent_records')
-          .select('is_paid')
+          .select('id, due_date, year, month')
           .eq('house_id', houseId)
           .order('year', ascending: false)
           .order('month', ascending: false)
           .limit(1)
           .maybeSingle();
-      if (latestRent != null && latestRent['is_paid'] == false) {
-        upcomingBills = 'Sewa';
-      } else {
-        upcomingBills = 'Listrik';
+      if (latestRent != null) {
+        final unpaidMembers = await _client
+            .from('member_payments')
+            .select('id')
+            .eq('rent_record_id', latestRent['id'] as String)
+            .eq('is_paid', false);
+        if (unpaidMembers.isNotEmpty) {
+          final dueDate = latestRent['due_date'] as int?;
+          final today = DateTime.now();
+          if (dueDate == null || today.day >= dueDate) {
+            upcomingBills = 'Sewa';
+          }
+        }
       }
 
       return HouseStat(

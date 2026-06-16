@@ -15,6 +15,7 @@ _RentRecord _$RentRecordFromJson(Map<String, dynamic> json) => _RentRecord(
       .map((e) => MemberPayment.fromJson(e as Map<String, dynamic>))
       .toList(),
   isPaid: json['isPaid'] as bool,
+  dueDate: (json['dueDate'] as num?)?.toInt(),
   paidAt: json['paidAt'] == null
       ? null
       : DateTime.parse(json['paidAt'] as String),
@@ -30,6 +31,7 @@ Map<String, dynamic> _$RentRecordToJson(_RentRecord instance) =>
       'totalWifi': instance.totalWifi,
       'payments': instance.payments,
       'isPaid': instance.isPaid,
+      'dueDate': instance.dueDate,
       'paidAt': instance.paidAt?.toIso8601String(),
       'bankName': instance.bankName,
       'bankAccountNumber': instance.bankAccountNumber,
@@ -37,6 +39,7 @@ Map<String, dynamic> _$RentRecordToJson(_RentRecord instance) =>
 
 _MemberPayment _$MemberPaymentFromJson(Map<String, dynamic> json) =>
     _MemberPayment(
+      memberId: json['memberId'] as String,
       memberName: json['memberName'] as String,
       isPaid: json['isPaid'] as bool,
       proofPhoto: json['proofPhoto'] as String?,
@@ -44,6 +47,7 @@ _MemberPayment _$MemberPaymentFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$MemberPaymentToJson(_MemberPayment instance) =>
     <String, dynamic>{
+      'memberId': instance.memberId,
       'memberName': instance.memberName,
       'isPaid': instance.isPaid,
       'proofPhoto': instance.proofPhoto,

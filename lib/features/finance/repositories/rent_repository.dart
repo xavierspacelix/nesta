@@ -3,10 +3,10 @@ import '../models/rent_record.dart';
 
 abstract class IRentRepository {
   Future<List<RentRecord>> getRentHistory();
-  Future<void> markPaid(int year, int month, String memberName);
-  Future<void> uploadProof(int year, int month, String memberName, String photoUrl);
-  Future<void> verifyPayment(int year, int month, String memberName);
-  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber});
+  Future<void> markPaid(int year, int month, String memberId);
+  Future<void> uploadProof(int year, int month, String memberId, String photoUrl);
+  Future<void> verifyPayment(int year, int month, String memberId);
+  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber, int? dueDate});
 }
 
 class MockRentRepository implements IRentRepository {
@@ -17,6 +17,7 @@ class MockRentRepository implements IRentRepository {
   }
 
   void _seed() {
+    const defaultDueDate = 5;
     final now = DateTime.now();
     final members = ['Budi', 'Juan', 'Rizki', 'Dika', 'Fajar'];
 
@@ -27,10 +28,10 @@ class MockRentRepository implements IRentRepository {
       final y = month <= 0 ? year - 1 : year;
       final payments = members.mapIndexed((j, name) {
         if (i == 0 && j == 1) {
-          return MemberPayment(memberName: name, isPaid: false, proofPhoto: 'https://via.placeholder.com/400');
+          return MemberPayment(memberId: 'id_$j', memberName: name, isPaid: false, proofPhoto: 'https://via.placeholder.com/400');
         }
         final paid = i > 1 || (i <= 1 && name == 'Budi');
-        return MemberPayment(memberName: name, isPaid: paid);
+        return MemberPayment(memberId: 'id_$j', memberName: name, isPaid: paid);
       }).toList();
       _records.add(RentRecord(
         year: y,
@@ -42,6 +43,7 @@ class MockRentRepository implements IRentRepository {
         paidAt: payments.every((p) => p.isPaid) ? DateTime(y, m, 28) : null,
         bankName: 'BCA',
         bankAccountNumber: '1234567890',
+        dueDate: defaultDueDate,
       ));
     }
   }
@@ -53,13 +55,13 @@ class MockRentRepository implements IRentRepository {
   }
 
   @override
-  Future<void> markPaid(int year, int month, String memberName) async {
+  Future<void> markPaid(int year, int month, String memberId) async {
     await Future.delayed(const Duration(milliseconds: 200));
     final idx = _records.indexWhere((r) => r.year == year && r.month == month);
     if (idx != -1) {
       final record = _records[idx];
       final payments = record.payments.map((p) {
-        if (p.memberName == memberName) return MemberPayment(memberName: p.memberName, isPaid: true);
+        if (p.memberId == memberId) return p.copyWith(isPaid: true);
         return p;
       }).toList();
       final allPaid = payments.every((p) => p.isPaid);
@@ -73,18 +75,19 @@ class MockRentRepository implements IRentRepository {
         paidAt: allPaid ? DateTime.now() : null,
         bankName: record.bankName,
         bankAccountNumber: record.bankAccountNumber,
+        dueDate: record.dueDate,
       );
     }
   }
 
   @override
-  Future<void> uploadProof(int year, int month, String memberName, String photoUrl) async {
+  Future<void> uploadProof(int year, int month, String memberId, String photoUrl) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final idx = _records.indexWhere((r) => r.year == year && r.month == month);
     if (idx != -1) {
       final record = _records[idx];
       final payments = record.payments.map((p) {
-        if (p.memberName == memberName) return MemberPayment(memberName: p.memberName, isPaid: false, proofPhoto: photoUrl);
+        if (p.memberId == memberId) return p.copyWith(proofPhoto: photoUrl);
         return p;
       }).toList();
       _records[idx] = RentRecord(
@@ -97,18 +100,19 @@ class MockRentRepository implements IRentRepository {
         paidAt: null,
         bankName: record.bankName,
         bankAccountNumber: record.bankAccountNumber,
+        dueDate: record.dueDate,
       );
     }
   }
 
   @override
-  Future<void> verifyPayment(int year, int month, String memberName) async {
+  Future<void> verifyPayment(int year, int month, String memberId) async {
     await Future.delayed(const Duration(milliseconds: 200));
     final idx = _records.indexWhere((r) => r.year == year && r.month == month);
     if (idx != -1) {
       final record = _records[idx];
       final payments = record.payments.map((p) {
-        if (p.memberName == memberName) return MemberPayment(memberName: p.memberName, isPaid: true, proofPhoto: p.proofPhoto);
+        if (p.memberId == memberId) return p.copyWith(isPaid: true);
         return p;
       }).toList();
       final allPaid = payments.every((p) => p.isPaid);
@@ -122,12 +126,13 @@ class MockRentRepository implements IRentRepository {
         paidAt: allPaid ? DateTime.now() : null,
         bankName: record.bankName,
         bankAccountNumber: record.bankAccountNumber,
+        dueDate: record.dueDate,
       );
     }
   }
 
   @override
-  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber}) async {
+  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber, int? dueDate}) async {
     final idx = _records.indexWhere((r) => r.year == year && r.month == month);
     if (idx != -1) {
       final record = _records[idx];
@@ -141,6 +146,7 @@ class MockRentRepository implements IRentRepository {
         paidAt: record.paidAt,
         bankName: bankName,
         bankAccountNumber: bankAccountNumber,
+        dueDate: dueDate ?? record.dueDate,
       );
     } else {
       _records.add(RentRecord(
@@ -152,6 +158,7 @@ class MockRentRepository implements IRentRepository {
         isPaid: false,
         bankName: bankName,
         bankAccountNumber: bankAccountNumber,
+        dueDate: dueDate,
       ));
     }
   }

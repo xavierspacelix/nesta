@@ -12,6 +12,7 @@ abstract class RentRecord with _$RentRecord {
     required int totalWifi,
     required List<MemberPayment> payments,
     required bool isPaid,
+    int? dueDate,
     DateTime? paidAt,
     String? bankName,
     String? bankAccountNumber,
@@ -33,6 +34,7 @@ abstract class RentRecord with _$RentRecord {
 @freezed
 abstract class MemberPayment with _$MemberPayment {
   const factory MemberPayment({
+    required String memberId,
     required String memberName,
     required bool isPaid,
     String? proofPhoto,

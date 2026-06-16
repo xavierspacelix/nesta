@@ -82,7 +82,6 @@ class RentScreen extends ConsumerWidget {
                         context,
                         ref,
                         records[index],
-                        memberName,
                         payment,
                       );
                     },
@@ -114,7 +113,6 @@ class RentScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     RentRecord record,
-    String memberName,
     MemberPayment payment,
   ) {
     final profile = ref.read(currentProfileProvider).valueOrNull;
@@ -148,7 +146,7 @@ class RentScreen extends ConsumerWidget {
                   radius: 16,
                   backgroundColor: AppTheme.primary.withOpacity(0.15),
                   child: Text(
-                    memberName[0],
+                    payment.memberName[0],
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -158,7 +156,7 @@ class RentScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  memberName,
+                  payment.memberName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -236,13 +234,12 @@ class RentScreen extends ConsumerWidget {
                 context,
                 ref,
                 record,
-                memberName,
                 payment,
               )
             else if (payment.isPendingVerification)
               _buildMyPendingVerificationCard(context, payment)
             else
-              _buildUploadButton(context, ref, record, memberName, ctx),
+              _buildUploadButton(context, ref, record, payment, ctx),
             const SizedBox(height: 8),
           ],
         ),
@@ -342,7 +339,6 @@ class RentScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     RentRecord record,
-    String memberName,
     MemberPayment payment,
   ) {
     return Column(
@@ -378,7 +374,7 @@ class RentScreen extends ConsumerWidget {
               try {
                 await ref
                     .read(rentRepositoryProvider)
-                    .verifyPayment(record.year, record.month, memberName);
+                    .verifyPayment(record.year, record.month, payment.memberId);
                 ref.invalidate(rentHistoryProvider);
                 if (!context.mounted) return;
                 Navigator.pop(context);
@@ -418,7 +414,7 @@ class RentScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     RentRecord record,
-    String memberName,
+    MemberPayment payment,
     BuildContext ctx,
   ) {
     return SizedBox(
@@ -437,7 +433,7 @@ class RentScreen extends ConsumerWidget {
             );
             await ref
                 .read(rentRepositoryProvider)
-                .uploadProof(record.year, record.month, memberName, url);
+                .uploadProof(record.year, record.month, payment.memberId, url);
             ref.invalidate(rentHistoryProvider);
             if (ctx.mounted) Navigator.pop(ctx);
             if (!context.mounted) return;

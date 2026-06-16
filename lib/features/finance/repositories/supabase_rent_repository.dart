@@ -71,6 +71,7 @@ class SupabaseRentRepository implements IRentRepository {
                     ?? (profile['name'] as String? ?? 'Unknown').split(' ').first)
                 : (memberLookup[memberId]?.displayName ?? 'Unknown');
             return MemberPayment(
+              memberId: memberId,
               memberName: memberName,
               isPaid: p['is_paid'] as bool? ?? false,
               proofPhoto: p['proof_photo'] as String?,
@@ -78,6 +79,7 @@ class SupabaseRentRepository implements IRentRepository {
           }).toList();
         } else {
           payments = memberLookup.values.map((m) => MemberPayment(
+            memberId: m.id,
             memberName: m.displayName,
             isPaid: false,
           )).toList();
@@ -95,6 +97,7 @@ class SupabaseRentRepository implements IRentRepository {
               : null,
           bankName: json['bank_name'] as String?,
           bankAccountNumber: json['bank_account_number'] as String?,
+          dueDate: json['due_date'] as int?,
         ));
       }
 
@@ -106,28 +109,10 @@ class SupabaseRentRepository implements IRentRepository {
   }
 
   @override
-  Future<void> markPaid(int year, int month, String memberName) async {
-    await _updatePayment(year, month, memberName, null);
-  }
-
-  @override
-  Future<void> uploadProof(int year, int month, String memberName, String photoUrl) async {
-    await _updatePayment(year, month, memberName, photoUrl);
-  }
-
-  Future<void> _updatePayment(int year, int month, String memberName, String? photoUrl) async {
+  Future<void> _updatePayment(int year, int month, String memberId, String? photoUrl) async {
     try {
       final houseId = await _getHouseId();
       if (houseId == null) return;
-
-      final profile = await _client
-          .from('profiles')
-          .select('id, name, nickname')
-          .eq('house_id', houseId)
-          .or('name.eq.$memberName,nickname.eq.$memberName')
-          .maybeSingle();
-
-      if (profile == null) return;
 
       final rentRecord = await _client
           .from('rent_records')
@@ -146,11 +131,12 @@ class SupabaseRentRepository implements IRentRepository {
         updateData['is_paid'] = true;
       }
 
+      updateData['rent_record_id'] = rentRecord['id'] as String;
+      updateData['member_id'] = memberId;
+
       await _client
           .from('member_payments')
-          .update(updateData)
-          .eq('rent_record_id', rentRecord['id'] as String)
-          .eq('member_id', profile['id'] as String);
+          .upsert(updateData, onConflict: 'rent_record_id, member_id');
     } catch (e) {
       Log.e('RentRepo', '_updatePayment failed', e);
       rethrow;
@@ -158,24 +144,24 @@ class SupabaseRentRepository implements IRentRepository {
   }
 
   @override
-  Future<void> verifyPayment(int year, int month, String memberName) async {
+  Future<void> markPaid(int year, int month, String memberId) async {
+    await _updatePayment(year, month, memberId, null);
+  }
+
+  @override
+  Future<void> uploadProof(int year, int month, String memberId, String photoUrl) async {
+    await _updatePayment(year, month, memberId, photoUrl);
+  }
+
+  @override
+  Future<void> verifyPayment(int year, int month, String memberId) async {
     try {
       final houseId = await _getHouseId();
       if (houseId == null) return;
 
-      final profile = await _client
-          .from('profiles')
-          .select('id')
-          .eq('house_id', houseId)
-          .or('name.eq.$memberName,nickname.eq.$memberName')
-          .maybeSingle();
-
-      if (profile == null) return;
-      final memberId = profile['id'] as String;
-
       final rentRecord = await _client
           .from('rent_records')
-          .select('id')
+          .select('id, total_rent, total_wifi, due_date, bank_name, bank_account_number')
           .eq('house_id', houseId)
           .eq('year', year)
           .eq('month', month)
@@ -185,13 +171,45 @@ class SupabaseRentRepository implements IRentRepository {
 
       await _client
           .from('member_payments')
-          .update({
+          .upsert({
+            'rent_record_id': rentRecord['id'] as String,
+            'member_id': memberId,
             'is_paid': true,
             'verified_by': _userId,
             'verified_at': DateTime.now().toIso8601String(),
-          })
+          }, onConflict: 'rent_record_id, member_id');
+
+      // Auto-generate next month when all members are paid
+      final unpaid = await _client
+          .from('member_payments')
+          .select('id')
           .eq('rent_record_id', rentRecord['id'] as String)
-          .eq('member_id', memberId);
+          .eq('is_paid', false);
+
+      if (unpaid.isNotEmpty) return;
+
+      final next = DateTime(year, month + 1);
+      final nextYear = next.year;
+      final nextMonth = next.month;
+
+      final existing = await _client
+          .from('rent_records')
+          .select('id')
+          .eq('house_id', houseId)
+          .eq('year', nextYear)
+          .eq('month', nextMonth)
+          .maybeSingle();
+
+      if (existing != null) return;
+
+      await setRentAmounts(
+        nextYear, nextMonth,
+        rentRecord['total_rent'] as int,
+        rentRecord['total_wifi'] as int,
+        bankName: rentRecord['bank_name'] as String?,
+        bankAccountNumber: rentRecord['bank_account_number'] as String?,
+        dueDate: rentRecord['due_date'] as int?,
+      );
     } catch (e) {
       Log.e('RentRepo', 'verifyPayment failed', e);
       rethrow;
@@ -199,7 +217,7 @@ class SupabaseRentRepository implements IRentRepository {
   }
 
   @override
-  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber}) async {
+  Future<void> setRentAmounts(int year, int month, int totalRent, int totalWifi, {String? bankName, String? bankAccountNumber, int? dueDate}) async {
     try {
       final houseId = await _getHouseId();
       if (houseId == null) return;
@@ -212,6 +230,7 @@ class SupabaseRentRepository implements IRentRepository {
         'total_wifi': totalWifi,
         if (bankName != null) 'bank_name': bankName,
         if (bankAccountNumber != null) 'bank_account_number': bankAccountNumber,
+        if (dueDate != null) 'due_date': dueDate,
       }, onConflict: 'house_id,year,month');
 
       final record = await _client

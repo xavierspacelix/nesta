@@ -31,6 +31,7 @@ class HomeManagementScreen extends ConsumerStatefulWidget {
 class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
   final _rentController = TextEditingController();
   final _wifiController = TextEditingController();
+  final _dueDateController = TextEditingController();
   final _bankNameController = TextEditingController();
   final _bankAccountController = TextEditingController();
   bool _saving = false;
@@ -41,6 +42,7 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
   void dispose() {
     _rentController.dispose();
     _wifiController.dispose();
+    _dueDateController.dispose();
     _bankNameController.dispose();
     _bankAccountController.dispose();
     super.dispose();
@@ -55,6 +57,7 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     if (current != null) {
       _rentController.text = current.totalRent.toString();
       _wifiController.text = current.totalWifi.toString();
+      _dueDateController.text = current.dueDate?.toString() ?? '';
       _bankNameController.text = current.bankName ?? '';
       _bankAccountController.text = current.bankAccountNumber ?? '';
     }
@@ -77,10 +80,12 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     setState(() => _saving = true);
     try {
       final now = DateTime.now();
+      final dueDate = int.tryParse(_dueDateController.text.trim());
       await ref.read(_rentRepoProvider).setRentAmounts(
         now.year, now.month, rent, wifi,
         bankName: bankName.isNotEmpty ? bankName : null,
         bankAccountNumber: bankAccount.isNotEmpty ? bankAccount : null,
+        dueDate: dueDate,
       );
       ref.invalidate(rentHistoryProvider);
       if (!mounted) return;
@@ -211,6 +216,15 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          TextFormField(
+            controller: _dueDateController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Tanggal Jatuh Tempo (tanggal)',
+              hintText: 'Contoh: 5',
+            ),
+          ),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _bankNameController,
             decoration: const InputDecoration(

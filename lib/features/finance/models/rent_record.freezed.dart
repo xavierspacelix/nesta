@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RentRecord {
 
- int get year; int get month; int get totalRent; int get totalWifi; List<MemberPayment> get payments; bool get isPaid; DateTime? get paidAt; String? get bankName; String? get bankAccountNumber;
+ int get year; int get month; int get totalRent; int get totalWifi; List<MemberPayment> get payments; bool get isPaid; int? get dueDate; DateTime? get paidAt; String? get bankName; String? get bankAccountNumber;
 /// Create a copy of RentRecord
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $RentRecordCopyWith<RentRecord> get copyWith => _$RentRecordCopyWithImpl<RentRec
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RentRecord&&(identical(other.year, year) || other.year == year)&&(identical(other.month, month) || other.month == month)&&(identical(other.totalRent, totalRent) || other.totalRent == totalRent)&&(identical(other.totalWifi, totalWifi) || other.totalWifi == totalWifi)&&const DeepCollectionEquality().equals(other.payments, payments)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNumber, bankAccountNumber) || other.bankAccountNumber == bankAccountNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RentRecord&&(identical(other.year, year) || other.year == year)&&(identical(other.month, month) || other.month == month)&&(identical(other.totalRent, totalRent) || other.totalRent == totalRent)&&(identical(other.totalWifi, totalWifi) || other.totalWifi == totalWifi)&&const DeepCollectionEquality().equals(other.payments, payments)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNumber, bankAccountNumber) || other.bankAccountNumber == bankAccountNumber));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,year,month,totalRent,totalWifi,const DeepCollectionEquality().hash(payments),isPaid,paidAt,bankName,bankAccountNumber);
+int get hashCode => Object.hash(runtimeType,year,month,totalRent,totalWifi,const DeepCollectionEquality().hash(payments),isPaid,dueDate,paidAt,bankName,bankAccountNumber);
 
 @override
 String toString() {
-  return 'RentRecord(year: $year, month: $month, totalRent: $totalRent, totalWifi: $totalWifi, payments: $payments, isPaid: $isPaid, paidAt: $paidAt, bankName: $bankName, bankAccountNumber: $bankAccountNumber)';
+  return 'RentRecord(year: $year, month: $month, totalRent: $totalRent, totalWifi: $totalWifi, payments: $payments, isPaid: $isPaid, dueDate: $dueDate, paidAt: $paidAt, bankName: $bankName, bankAccountNumber: $bankAccountNumber)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $RentRecordCopyWith<$Res>  {
   factory $RentRecordCopyWith(RentRecord value, $Res Function(RentRecord) _then) = _$RentRecordCopyWithImpl;
 @useResult
 $Res call({
- int year, int month, int totalRent, int totalWifi, List<MemberPayment> payments, bool isPaid, DateTime? paidAt, String? bankName, String? bankAccountNumber
+ int year, int month, int totalRent, int totalWifi, List<MemberPayment> payments, bool isPaid, int? dueDate, DateTime? paidAt, String? bankName, String? bankAccountNumber
 });
 
 
@@ -66,7 +66,7 @@ class _$RentRecordCopyWithImpl<$Res>
 
 /// Create a copy of RentRecord
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? year = null,Object? month = null,Object? totalRent = null,Object? totalWifi = null,Object? payments = null,Object? isPaid = null,Object? paidAt = freezed,Object? bankName = freezed,Object? bankAccountNumber = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? year = null,Object? month = null,Object? totalRent = null,Object? totalWifi = null,Object? payments = null,Object? isPaid = null,Object? dueDate = freezed,Object? paidAt = freezed,Object? bankName = freezed,Object? bankAccountNumber = freezed,}) {
   return _then(RentRecord(
 year: null == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
 as int,month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
@@ -74,7 +74,8 @@ as int,totalRent: null == totalRent ? _self.totalRent : totalRent // ignore: cas
 as int,totalWifi: null == totalWifi ? _self.totalWifi : totalWifi // ignore: cast_nullable_to_non_nullable
 as int,payments: null == payments ? _self.payments : payments // ignore: cast_nullable_to_non_nullable
 as List<MemberPayment>,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
-as bool,paidAt: freezed == paidAt ? _self.paidAt : paidAt // ignore: cast_nullable_to_non_nullable
+as bool,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
+as int?,paidAt: freezed == paidAt ? _self.paidAt : paidAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
 as String?,bankAccountNumber: freezed == bankAccountNumber ? _self.bankAccountNumber : bankAccountNumber // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -162,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  int? dueDate,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RentRecord() when $default != null:
-return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
+return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.dueDate,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
   return orElse();
 
 }
@@ -183,10 +184,10 @@ return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.pay
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  int? dueDate,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)  $default,) {final _that = this;
 switch (_that) {
 case _RentRecord():
-return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
+return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.dueDate,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +204,10 @@ return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.pay
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int year,  int month,  int totalRent,  int totalWifi,  List<MemberPayment> payments,  bool isPaid,  int? dueDate,  DateTime? paidAt,  String? bankName,  String? bankAccountNumber)?  $default,) {final _that = this;
 switch (_that) {
 case _RentRecord() when $default != null:
-return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
+return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.payments,_that.isPaid,_that.dueDate,_that.paidAt,_that.bankName,_that.bankAccountNumber);case _:
   return null;
 
 }
@@ -218,7 +219,7 @@ return $default(_that.year,_that.month,_that.totalRent,_that.totalWifi,_that.pay
 @JsonSerializable()
 
 class _RentRecord extends RentRecord {
-  const _RentRecord({required this.year, required this.month, required this.totalRent, required this.totalWifi, required  List<MemberPayment> payments, required this.isPaid, this.paidAt, this.bankName, this.bankAccountNumber}): _payments = payments,super._();
+  const _RentRecord({required this.year, required this.month, required this.totalRent, required this.totalWifi, required  List<MemberPayment> payments, required this.isPaid, this.dueDate, this.paidAt, this.bankName, this.bankAccountNumber}): _payments = payments,super._();
   factory _RentRecord.fromJson(Map<String, dynamic> json) => _$RentRecordFromJson(json);
 
 @override final  int year;
@@ -233,6 +234,7 @@ class _RentRecord extends RentRecord {
 }
 
 @override final  bool isPaid;
+@override final  int? dueDate;
 @override final  DateTime? paidAt;
 @override final  String? bankName;
 @override final  String? bankAccountNumber;
@@ -250,16 +252,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RentRecord&&(identical(other.year, year) || other.year == year)&&(identical(other.month, month) || other.month == month)&&(identical(other.totalRent, totalRent) || other.totalRent == totalRent)&&(identical(other.totalWifi, totalWifi) || other.totalWifi == totalWifi)&&const DeepCollectionEquality().equals(other._payments, _payments)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNumber, bankAccountNumber) || other.bankAccountNumber == bankAccountNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RentRecord&&(identical(other.year, year) || other.year == year)&&(identical(other.month, month) || other.month == month)&&(identical(other.totalRent, totalRent) || other.totalRent == totalRent)&&(identical(other.totalWifi, totalWifi) || other.totalWifi == totalWifi)&&const DeepCollectionEquality().equals(other._payments, _payments)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNumber, bankAccountNumber) || other.bankAccountNumber == bankAccountNumber));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,year,month,totalRent,totalWifi,const DeepCollectionEquality().hash(_payments),isPaid,paidAt,bankName,bankAccountNumber);
+int get hashCode => Object.hash(runtimeType,year,month,totalRent,totalWifi,const DeepCollectionEquality().hash(_payments),isPaid,dueDate,paidAt,bankName,bankAccountNumber);
 
 @override
 String toString() {
-  return 'RentRecord(year: $year, month: $month, totalRent: $totalRent, totalWifi: $totalWifi, payments: $payments, isPaid: $isPaid, paidAt: $paidAt, bankName: $bankName, bankAccountNumber: $bankAccountNumber)';
+  return 'RentRecord(year: $year, month: $month, totalRent: $totalRent, totalWifi: $totalWifi, payments: $payments, isPaid: $isPaid, dueDate: $dueDate, paidAt: $paidAt, bankName: $bankName, bankAccountNumber: $bankAccountNumber)';
 }
 
 
@@ -270,7 +272,7 @@ abstract mixin class _$RentRecordCopyWith<$Res> implements $RentRecordCopyWith<$
   factory _$RentRecordCopyWith(_RentRecord value, $Res Function(_RentRecord) _then) = __$RentRecordCopyWithImpl;
 @override @useResult
 $Res call({
- int year, int month, int totalRent, int totalWifi, List<MemberPayment> payments, bool isPaid, DateTime? paidAt, String? bankName, String? bankAccountNumber
+ int year, int month, int totalRent, int totalWifi, List<MemberPayment> payments, bool isPaid, int? dueDate, DateTime? paidAt, String? bankName, String? bankAccountNumber
 });
 
 
@@ -287,7 +289,7 @@ class __$RentRecordCopyWithImpl<$Res>
 
 /// Create a copy of RentRecord
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? year = null,Object? month = null,Object? totalRent = null,Object? totalWifi = null,Object? payments = null,Object? isPaid = null,Object? paidAt = freezed,Object? bankName = freezed,Object? bankAccountNumber = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? year = null,Object? month = null,Object? totalRent = null,Object? totalWifi = null,Object? payments = null,Object? isPaid = null,Object? dueDate = freezed,Object? paidAt = freezed,Object? bankName = freezed,Object? bankAccountNumber = freezed,}) {
   return _then(_RentRecord(
 year: null == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
 as int,month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
@@ -295,7 +297,8 @@ as int,totalRent: null == totalRent ? _self.totalRent : totalRent // ignore: cas
 as int,totalWifi: null == totalWifi ? _self.totalWifi : totalWifi // ignore: cast_nullable_to_non_nullable
 as int,payments: null == payments ? _self._payments : payments // ignore: cast_nullable_to_non_nullable
 as List<MemberPayment>,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
-as bool,paidAt: freezed == paidAt ? _self.paidAt : paidAt // ignore: cast_nullable_to_non_nullable
+as bool,dueDate: freezed == dueDate ? _self.dueDate : dueDate // ignore: cast_nullable_to_non_nullable
+as int?,paidAt: freezed == paidAt ? _self.paidAt : paidAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,bankName: freezed == bankName ? _self.bankName : bankName // ignore: cast_nullable_to_non_nullable
 as String?,bankAccountNumber: freezed == bankAccountNumber ? _self.bankAccountNumber : bankAccountNumber // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -309,7 +312,7 @@ as String?,
 /// @nodoc
 mixin _$MemberPayment {
 
- String get memberName; bool get isPaid; String? get proofPhoto;
+ String get memberId; String get memberName; bool get isPaid; String? get proofPhoto;
 /// Create a copy of MemberPayment
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -322,16 +325,16 @@ $MemberPaymentCopyWith<MemberPayment> get copyWith => _$MemberPaymentCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MemberPayment&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MemberPayment&&(identical(other.memberId, memberId) || other.memberId == memberId)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,memberName,isPaid,proofPhoto);
+int get hashCode => Object.hash(runtimeType,memberId,memberName,isPaid,proofPhoto);
 
 @override
 String toString() {
-  return 'MemberPayment(memberName: $memberName, isPaid: $isPaid, proofPhoto: $proofPhoto)';
+  return 'MemberPayment(memberId: $memberId, memberName: $memberName, isPaid: $isPaid, proofPhoto: $proofPhoto)';
 }
 
 
@@ -342,7 +345,7 @@ abstract mixin class $MemberPaymentCopyWith<$Res>  {
   factory $MemberPaymentCopyWith(MemberPayment value, $Res Function(MemberPayment) _then) = _$MemberPaymentCopyWithImpl;
 @useResult
 $Res call({
- String memberName, bool isPaid, String? proofPhoto
+ String memberId, String memberName, bool isPaid, String? proofPhoto
 });
 
 
@@ -359,9 +362,10 @@ class _$MemberPaymentCopyWithImpl<$Res>
 
 /// Create a copy of MemberPayment
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? memberName = null,Object? isPaid = null,Object? proofPhoto = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? memberId = null,Object? memberName = null,Object? isPaid = null,Object? proofPhoto = freezed,}) {
   return _then(MemberPayment(
-memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
+memberId: null == memberId ? _self.memberId : memberId // ignore: cast_nullable_to_non_nullable
+as String,memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
 as String,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
 as bool,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -449,10 +453,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String memberName,  bool isPaid,  String? proofPhoto)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String memberId,  String memberName,  bool isPaid,  String? proofPhoto)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MemberPayment() when $default != null:
-return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
+return $default(_that.memberId,_that.memberName,_that.isPaid,_that.proofPhoto);case _:
   return orElse();
 
 }
@@ -470,10 +474,10 @@ return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String memberName,  bool isPaid,  String? proofPhoto)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String memberId,  String memberName,  bool isPaid,  String? proofPhoto)  $default,) {final _that = this;
 switch (_that) {
 case _MemberPayment():
-return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
+return $default(_that.memberId,_that.memberName,_that.isPaid,_that.proofPhoto);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -490,10 +494,10 @@ return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String memberName,  bool isPaid,  String? proofPhoto)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String memberId,  String memberName,  bool isPaid,  String? proofPhoto)?  $default,) {final _that = this;
 switch (_that) {
 case _MemberPayment() when $default != null:
-return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
+return $default(_that.memberId,_that.memberName,_that.isPaid,_that.proofPhoto);case _:
   return null;
 
 }
@@ -505,9 +509,10 @@ return $default(_that.memberName,_that.isPaid,_that.proofPhoto);case _:
 @JsonSerializable()
 
 class _MemberPayment extends MemberPayment {
-  const _MemberPayment({required this.memberName, required this.isPaid, this.proofPhoto}): super._();
+  const _MemberPayment({required this.memberId, required this.memberName, required this.isPaid, this.proofPhoto}): super._();
   factory _MemberPayment.fromJson(Map<String, dynamic> json) => _$MemberPaymentFromJson(json);
 
+@override final  String memberId;
 @override final  String memberName;
 @override final  bool isPaid;
 @override final  String? proofPhoto;
@@ -525,16 +530,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MemberPayment&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MemberPayment&&(identical(other.memberId, memberId) || other.memberId == memberId)&&(identical(other.memberName, memberName) || other.memberName == memberName)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid)&&(identical(other.proofPhoto, proofPhoto) || other.proofPhoto == proofPhoto));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,memberName,isPaid,proofPhoto);
+int get hashCode => Object.hash(runtimeType,memberId,memberName,isPaid,proofPhoto);
 
 @override
 String toString() {
-  return 'MemberPayment(memberName: $memberName, isPaid: $isPaid, proofPhoto: $proofPhoto)';
+  return 'MemberPayment(memberId: $memberId, memberName: $memberName, isPaid: $isPaid, proofPhoto: $proofPhoto)';
 }
 
 
@@ -545,13 +550,13 @@ abstract mixin class _$MemberPaymentCopyWith<$Res> implements $MemberPaymentCopy
   factory _$MemberPaymentCopyWith(_MemberPayment value, $Res Function(_MemberPayment) _then) = __$MemberPaymentCopyWithImpl;
 @override @useResult
 $Res call({
- String memberName, bool isPaid, String? proofPhoto
+ String memberId, String memberName, bool isPaid, String? proofPhoto
 });
 
 
 
-
 }
+
 /// @nodoc
 class __$MemberPaymentCopyWithImpl<$Res>
     implements _$MemberPaymentCopyWith<$Res> {
@@ -562,9 +567,10 @@ class __$MemberPaymentCopyWithImpl<$Res>
 
 /// Create a copy of MemberPayment
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? memberName = null,Object? isPaid = null,Object? proofPhoto = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? memberId = null,Object? memberName = null,Object? isPaid = null,Object? proofPhoto = freezed,}) {
   return _then(_MemberPayment(
-memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
+memberId: null == memberId ? _self.memberId : memberId // ignore: cast_nullable_to_non_nullable
+as String,memberName: null == memberName ? _self.memberName : memberName // ignore: cast_nullable_to_non_nullable
 as String,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
 as bool,proofPhoto: freezed == proofPhoto ? _self.proofPhoto : proofPhoto // ignore: cast_nullable_to_non_nullable
 as String?,

@@ -317,7 +317,9 @@ class TaskDetailScreen extends ConsumerWidget {
               child: _PhotoCard(
                 label: 'Sebelum',
                 photoUrl: detail.beforePhoto,
-                onPick: (bytes, fileName) => _uploadEvidence(ref, detail.id, 'before', bytes, fileName),
+                onPick: detail.status == TaskStatus.completed
+                    ? null
+                    : (bytes, fileName) => _uploadEvidence(ref, detail.id, 'before', bytes, fileName),
               ),
             ),
             const SizedBox(width: 12),
@@ -325,7 +327,9 @@ class TaskDetailScreen extends ConsumerWidget {
               child: _PhotoCard(
                 label: 'Sesudah',
                 photoUrl: detail.afterPhoto,
-                onPick: (bytes, fileName) => _uploadEvidence(ref, detail.id, 'after', bytes, fileName),
+                onPick: detail.status == TaskStatus.completed
+                    ? null
+                    : (bytes, fileName) => _uploadEvidence(ref, detail.id, 'after', bytes, fileName),
               ),
             ),
           ],
@@ -348,7 +352,7 @@ class TaskDetailScreen extends ConsumerWidget {
         fileName: fileName,
         bytes: bytes,
       );
-      ref.read(taskDetailProvider(taskId).notifier).uploadEvidence(url, type);
+      await ref.read(taskDetailProvider(taskId).notifier).uploadEvidence(url, type);
     } catch (e) {
       Log.e('TaskEvidence', 'upload $type failed', e);
     }
