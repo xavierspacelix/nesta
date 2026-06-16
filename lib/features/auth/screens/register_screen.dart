@@ -39,16 +39,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       if (!mounted) return;
 
-      final authState = ref.read(authProvider);
-      if (authState.status == AuthStatus.authenticated) {
+      if (user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pendaftaran berhasil!')),
         );
-        if (authState.houseId != null) {
-          context.go('/dashboard');
-        } else {
-          context.go('/house/select');
-        }
+        ref.read(authProvider.notifier).setSessionFromUser(user);
+        context.go('/house/select');
       } else {
         final email = _emailController.text.trim();
         context.go('/email-confirmation?email=$email');
