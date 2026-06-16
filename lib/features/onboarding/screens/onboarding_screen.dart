@@ -1,20 +1,28 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/storage_provider.dart';
+import 'package:nesta/core/services/logger.dart';
+import 'package:nesta/core/utils/image_picker_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nicknameController = TextEditingController();
   String? _selectedRoom;
   bool _saving = false;
+  List<int>? _avatarBytes;
+  String? _avatarFileName;
 
   final List<String> _mockRooms = [
     'Kamar Utama',
@@ -27,6 +35,78 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _nicknameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar() async {
+    final ctx = context;
+    final picked = await showModalBottomSheet<({List<int> bytes, String fileName})?>(
+      context: ctx,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.neutral300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('Foto Profil', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final picked = await ImagePickerHelper.pickFromCamera();
+                    if (ctx.mounted) Navigator.pop(ctx, picked);
+                  },
+                  icon: const Icon(Icons.camera_alt_rounded, size: 20),
+                  label: const Text('Kamera', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await ImagePickerHelper.pickFromGallery();
+                    if (ctx.mounted) Navigator.pop(ctx, picked);
+                  },
+                  icon: const Icon(Icons.photo_library_rounded, size: 20),
+                  label: const Text('Galeri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (picked == null) return;
+    setState(() {
+      _avatarBytes = picked.bytes;
+      _avatarFileName = picked.fileName;
+    });
   }
 
   Future<void> _handleComplete() async {
@@ -43,6 +123,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           .from('profiles')
           .update({'nickname': _nicknameController.text.trim()})
           .eq('id', user.id);
+
+      if (_avatarBytes != null && _avatarFileName != null) {
+        try {
+          final storage = ref.read(storageServiceProvider);
+          final url = await storage.uploadFile(
+            folder: 'avatars',
+            fileName: _avatarFileName!,
+            bytes: _avatarBytes!,
+          );
+          await client.from('profiles').update({'avatar_url': url}).eq('id', user.id);
+        } catch (e) {
+          Log.e('Onboarding', 'avatar upload failed', e);
+        }
+      }
 
       if (!mounted) return;
       context.go('/dashboard');
@@ -79,40 +173,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 40),
               Center(
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppTheme.neutral100,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.neutral200),
+                child: GestureDetector(
+                  onTap: _pickAvatar,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppTheme.neutral100,
+                        backgroundImage: _avatarBytes != null
+                            ? MemoryImage(Uint8List.fromList(_avatarBytes!))
+                            : null,
+                        child: _avatarBytes == null
+                            ? const Icon(
+                                Icons.person_outline_rounded,
+                                size: 48,
+                                color: AppTheme.neutral400,
+                              )
+                            : null,
                       ),
-                      child: const Icon(
-                        Icons.person_outline_rounded,
-                        size: 48,
-                        color: AppTheme.neutral400,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

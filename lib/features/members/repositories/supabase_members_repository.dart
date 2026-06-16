@@ -29,7 +29,7 @@ class SupabaseMembersRepository implements IMembersRepository {
 
       final response = await _client
           .from('profiles')
-          .select('id, name, nickname, role, status')
+          .select('id, name, nickname, role, status, avatar_url')
           .eq('house_id', houseId)
           .order('created_at');
 
@@ -57,6 +57,7 @@ class SupabaseMembersRepository implements IMembersRepository {
           tasksCompleted: completedAssignments.length,
           totalFines: totalFines,
           status: json['status'] as String == 'active' ? 'Aktif' : 'Tidak Aktif',
+          avatarUrl: json['avatar_url'] as String?,
         ));
       }
 
@@ -102,7 +103,9 @@ class SupabaseMembersRepository implements IMembersRepository {
       }
 
       final createdAt = json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
+          ? (json['created_at'] is DateTime
+              ? json['created_at'] as DateTime
+              : DateTime.tryParse(json['created_at'] as String))
           : null;
 
       return UserProfile(
@@ -119,6 +122,19 @@ class SupabaseMembersRepository implements IMembersRepository {
     } catch (e) {
       Log.e('MembersRepo', 'getCurrentProfile failed', e);
       return null;
+    }
+  }
+
+  @override
+  Future<void> updateAvatar(String avatarUrl) async {
+    try {
+      await _client
+          .from('profiles')
+          .update({'avatar_url': avatarUrl})
+          .eq('id', _userId);
+    } catch (e) {
+      Log.e('MembersRepo', 'updateAvatar failed', e);
+      rethrow;
     }
   }
 }

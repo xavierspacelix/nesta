@@ -109,4 +109,18 @@ class SupabaseTaskDetailRepository implements ITaskDetailRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<void> uploadEvidence(String assignmentId, String type, String photoUrl) async {
+    try {
+      await _client.from('task_evidence').insert({
+        'assignment_id': assignmentId,
+        'photo_url': photoUrl,
+        'type': type,
+      });
+    } catch (e) {
+      Log.e('TaskDetailRepo', 'uploadEvidence failed', e);
+      rethrow;
+    }
+  }
 }

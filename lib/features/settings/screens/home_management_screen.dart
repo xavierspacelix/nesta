@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/features/chores/providers/room_provider.dart';
+import 'package:nesta/features/finance/models/rent_record.dart';
 import 'package:nesta/features/finance/providers/rent_provider.dart';
 import 'package:nesta/features/finance/repositories/rent_repository.dart';
 import 'package:nesta/features/finance/repositories/supabase_rent_repository.dart';
@@ -32,12 +33,26 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
   final _wifiController = TextEditingController();
   bool _saving = false;
   bool _generating = false;
+  bool _initialized = false;
 
   @override
   void dispose() {
     _rentController.dispose();
     _wifiController.dispose();
     super.dispose();
+  }
+
+  void _prefillFromRecords(List<RentRecord> records) {
+    if (_initialized) return;
+    final now = DateTime.now();
+    final current = records.where(
+      (r) => r.year == now.year && r.month == now.month,
+    ).firstOrNull;
+    if (current != null) {
+      _rentController.text = current.totalRent.toString();
+      _wifiController.text = current.totalWifi.toString();
+    }
+    _initialized = true;
   }
 
   Future<void> _saveCosts() async {
@@ -116,6 +131,17 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
     final profileAsync = ref.watch(currentProfileProvider);
     final isOwner = profileAsync.valueOrNull?.role == 'Owner';
     final roomsAsync = ref.watch(roomsProvider);
+    final rentAsync = ref.watch(rentHistoryProvider);
+
+    rentAsync.whenData(_prefillFromRecords);
+
+    final now = DateTime.now();
+    final months = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    final currentRecord = rentAsync.valueOrNull?.where(
+      (r) => r.year == now.year && r.month == now.month,
+    ).firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -146,8 +172,14 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
           const SizedBox(height: 8),
           _buildActionTile('Atur Ruangan', Icons.meeting_room_outlined, onTap: () => context.push('/rooms')),
           const SizedBox(height: 24),
-          _buildSectionHeader('Biaya Bulanan'),
+          _buildSectionHeader('Biaya Bulanan — ${months[now.month]} ${now.year}'),
           const SizedBox(height: 8),
+          if (currentRecord != null) ...[
+            _buildInfoTile('Sewa', 'Rp${_formatRupiah(currentRecord.totalRent)}'),
+            const SizedBox(height: 4),
+            _buildInfoTile('WiFi', 'Rp${_formatRupiah(currentRecord.totalWifi)}'),
+            const SizedBox(height: 12),
+          ],
           TextFormField(
             controller: _rentController,
             keyboardType: TextInputType.number,
@@ -200,6 +232,13 @@ class _HomeManagementScreenState extends ConsumerState<HomeManagementScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  String _formatRupiah(int amount) {
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
     );
   }
 

@@ -79,6 +79,7 @@ Frontend
 * Go Router
 * Freezed
 * Json Serializable
+* image_picker (for camera/gallery uploads)
 
 Backend
 

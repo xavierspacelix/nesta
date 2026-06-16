@@ -21,10 +21,13 @@ class MembersScreen extends ConsumerWidget {
       body: membersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat anggota')),
-        data: (members) => ListView.builder(
-          padding: const EdgeInsets.all(24),
-          itemCount: members.length,
-          itemBuilder: (context, index) => _MemberCard(member: members[index]),
+        data: (members) => RefreshIndicator(
+          onRefresh: () => ref.refresh(membersProvider.future),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: members.length,
+            itemBuilder: (context, index) => _MemberCard(member: members[index]),
+          ),
         ),
       ),
     );
@@ -56,11 +59,14 @@ class _MemberCard extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: colors[member.name.hashCode % colors.length].withOpacity(0.15),
-            child: Text(
-              member.name[0],
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18,
-                  color: colors[member.name.hashCode % colors.length]),
-            ),
+            backgroundImage: member.avatarUrl != null ? NetworkImage(member.avatarUrl!) : null,
+            child: member.avatarUrl == null
+                ? Text(
+                    member.name[0],
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18,
+                        color: colors[member.name.hashCode % colors.length]),
+                  )
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

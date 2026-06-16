@@ -39,7 +39,10 @@ class ScheduleScreen extends ConsumerWidget {
                           e.date.month == selectedDate.month &&
                           e.date.day == selectedDate.day)
                       .toList();
-                  return _buildDayContent(context, selectedDate, dayEntries);
+                  return RefreshIndicator(
+                    onRefresh: () => ref.refresh(scheduleProvider.future),
+                    child: _buildDayContent(context, selectedDate, dayEntries),
+                  );
                 },
               ),
             ),

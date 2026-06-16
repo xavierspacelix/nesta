@@ -5,41 +5,53 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/features/chores/providers/chores_provider.dart';
 import 'package:nesta/features/finance/providers/finance_provider.dart';
 import 'package:nesta/features/activity/providers/activity_provider.dart';
+import 'package:nesta/features/members/providers/members_provider.dart';
 import 'package:nesta/features/schedule/models/upcoming_task.dart';
 import 'package:nesta/features/schedule/providers/schedule_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 16),
-              _buildManagementRow(context),
-              const SizedBox(height: 24),
-              _buildTodayDutyCard(context),
-              const SizedBox(height: 32),
-              _buildStatistics(context),
-              const SizedBox(height: 32),
-              _buildRecentActivity(context),
-              const SizedBox(height: 32),
-              _buildUpcomingTasks(context),
-              const SizedBox(height: 40),
-            ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await ref.refresh(currentProfileProvider.future);
+            await ref.refresh(houseStatsProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, ref),
+                const SizedBox(height: 16),
+                _buildManagementRow(context),
+                const SizedBox(height: 24),
+                _buildTodayDutyCard(context),
+                const SizedBox(height: 32),
+                _buildStatistics(context),
+                const SizedBox(height: 32),
+                _buildRecentActivity(context),
+                const SizedBox(height: 32),
+                _buildUpcomingTasks(context),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(currentProfileProvider);
+    final name = profileAsync.valueOrNull?.name ?? 'User';
+    final avatarUrl = profileAsync.valueOrNull?.avatarUrl;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -47,7 +59,7 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hai, Budi! 👋',
+              'Hai, $name! 👋',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 4),
@@ -61,15 +73,13 @@ class DashboardScreen extends StatelessWidget {
         ),
         GestureDetector(
           onTap: () => context.push('/settings'),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.neutral100,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.neutral200),
-            ),
-            child: const Icon(Icons.person_outline_rounded, color: AppTheme.neutral500),
+          child: CircleAvatar(
+            radius: 24,
+            backgroundColor: AppTheme.neutral100,
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+            child: avatarUrl == null
+                ? const Icon(Icons.person_outline_rounded, color: AppTheme.neutral500)
+                : null,
           ),
         ),
       ],

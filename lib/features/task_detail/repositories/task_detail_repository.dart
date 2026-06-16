@@ -9,6 +9,7 @@ abstract class ITaskDetailRepository {
     required bool isCompleted,
     required String userId,
   });
+  Future<void> uploadEvidence(String assignmentId, String type, String photoUrl);
 }
 
 class MockTaskDetailRepository implements ITaskDetailRepository {
@@ -76,6 +77,11 @@ class MockTaskDetailRepository implements ITaskDetailRepository {
     required bool isCompleted,
     required String userId,
   }) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  @override
+  Future<void> uploadEvidence(String assignmentId, String type, String photoUrl) async {
     await Future.delayed(const Duration(milliseconds: 100));
   }
 }

@@ -2,6 +2,7 @@ import '../models/task_verification.dart';
 
 abstract class ITaskVerificationRepository {
   Future<TaskVerification> getVerification(String taskId);
+  Future<void> approveTask(String taskId);
 }
 
 class MockTaskVerificationRepository implements ITaskVerificationRepository {
@@ -23,8 +24,8 @@ class MockTaskVerificationRepository implements ITaskVerificationRepository {
       completionPercentage: 0.6,
       completedItems: 3,
       totalItems: 5,
-      beforePhoto: null,
-      afterPhoto: null,
+      beforePhoto: 'https://picsum.photos/seed/before1/400/300',
+      afterPhoto: 'https://picsum.photos/seed/after1/400/300',
       status: VerificationStatus.late,
     );
 
@@ -37,8 +38,8 @@ class MockTaskVerificationRepository implements ITaskVerificationRepository {
       completionPercentage: 1.0,
       completedItems: 4,
       totalItems: 4,
-      beforePhoto: null,
-      afterPhoto: null,
+      beforePhoto: 'https://picsum.photos/seed/before2/400/300',
+      afterPhoto: 'https://picsum.photos/seed/after2/400/300',
       status: VerificationStatus.completed,
     );
 
@@ -59,5 +60,17 @@ class MockTaskVerificationRepository implements ITaskVerificationRepository {
   Future<TaskVerification> getVerification(String taskId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _data[taskId] ?? _data['task_1']!;
+  }
+
+  @override
+  Future<void> approveTask(String taskId) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final current = _data[taskId];
+    if (current != null && current.status != VerificationStatus.completed) {
+      _data[taskId] = current.copyWith(
+        status: VerificationStatus.completed,
+        completedAt: DateTime.now(),
+      );
+    }
   }
 }

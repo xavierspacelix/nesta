@@ -28,36 +28,39 @@ class RoomListScreen extends ConsumerWidget {
       body: roomsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat ruangan')),
-        data: (rooms) {
-          if (rooms.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.meeting_room_outlined,
-                      size: 64, color: AppTheme.neutral300),
-                  const SizedBox(height: 16),
-                  Text('Belum ada ruangan',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 8),
-                  Text('Tambahkan ruangan pertama kamu',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.neutral500,
-                          )),
-                ],
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: rooms.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final room = rooms[index];
-              return _RoomCard(room: room, ref: ref);
-            },
-          );
-        },
+        data: (rooms) => RefreshIndicator(
+          onRefresh: () => ref.refresh(roomsProvider.future),
+          child: rooms.isEmpty
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.meeting_room_outlined,
+                            size: 64, color: AppTheme.neutral300),
+                        const SizedBox(height: 16),
+                        Text('Belum ada ruangan',
+                            style: Theme.of(context).textTheme.headlineSmall),
+                        const SizedBox(height: 8),
+                        Text('Tambahkan ruangan pertama kamu',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.neutral500,
+                                )),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: rooms.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final room = rooms[index];
+                    return _RoomCard(room: room, ref: ref);
+                  },
+                ),
+        ),
       ),
     );
   }

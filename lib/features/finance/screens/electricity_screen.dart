@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/storage_provider.dart';
+import 'package:nesta/core/services/logger.dart';
+import 'package:nesta/core/utils/image_picker_helper.dart';
 import 'package:nesta/features/finance/models/electricity_purchase.dart';
 import 'package:nesta/features/finance/providers/electricity_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
@@ -38,35 +41,48 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       body: purchasesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
-        data: (purchases) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...purchases.map((p) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _PurchaseCard(purchase: p),
-              )),
-              const SizedBox(height: 16),
-              if (_showForm) _buildForm(currentUser),
-              if (!_showForm)
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: () => setState(() => _showForm = true),
-                    icon: const Icon(Icons.add_rounded, size: 20),
-                    label: const Text('Tambah Pembelian',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
-                    ),
+        data: (purchases) => RefreshIndicator(
+          onRefresh: () => ref.refresh(electricityPurchasesProvider.future),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...purchases.map(
+                  (p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _PurchaseCard(purchase: p),
                   ),
                 ),
-            ],
+                const SizedBox(height: 16),
+                if (_showForm) _buildForm(currentUser),
+                if (!_showForm)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () => setState(() => _showForm = true),
+                      icon: const Icon(Icons.add_rounded, size: 20),
+                      label: const Text(
+                        'Tambah Pembelian',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -81,9 +97,15 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             hintText: 'Nominal (Rp)',
-            hintStyle: const TextStyle(color: AppTheme.neutral400, fontSize: 14),
+            hintStyle: const TextStyle(
+              color: AppTheme.neutral400,
+              fontSize: 14,
+            ),
             prefixText: 'Rp ',
-            prefixStyle: const TextStyle(color: AppTheme.neutral600, fontWeight: FontWeight.w600),
+            prefixStyle: const TextStyle(
+              color: AppTheme.neutral600,
+              fontWeight: FontWeight.w600,
+            ),
             filled: true,
             fillColor: AppTheme.neutral50,
             border: OutlineInputBorder(
@@ -104,26 +126,71 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           decoration: BoxDecoration(
             color: AppTheme.neutral50,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.neutral200, style: BorderStyle.solid),
+            border: Border.all(
+              color: AppTheme.neutral200,
+              style: BorderStyle.solid,
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.camera_alt_outlined, color: AppTheme.neutral400, size: 20),
+              const Icon(
+                Icons.camera_alt_outlined,
+                color: AppTheme.neutral400,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text(_proofPhoto != null ? 'Foto terupload' : 'Foto bukti (opsional)',
-                  style: TextStyle(fontSize: 13, color: _proofPhoto != null ? AppTheme.success : AppTheme.neutral500)),
+              Text(
+                _proofPhoto != null
+                    ? 'Foto terupload'
+                    : 'Foto bukti (opsional)',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _proofPhoto != null
+                      ? AppTheme.success
+                      : AppTheme.neutral500,
+                ),
+              ),
               const Spacer(),
               GestureDetector(
-                onTap: () => setState(() => _proofPhoto = 'mock_proof_url'),
+                onTap: () async {
+                  final picked = await ImagePickerHelper.pickFromGallery();
+                  if (picked == null) return;
+                  try {
+                    final storage = ref.read(storageServiceProvider);
+                    final url = await storage.uploadFile(
+                      folder: 'electricity-proof',
+                      fileName: picked.fileName,
+                      bytes: picked.bytes,
+                    );
+                    if (!mounted) return;
+                    setState(() => _proofPhoto = url);
+                  } catch (e) {
+                    Log.e('ElectricityUpload', 'failed', e);
+                  }
+                },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: (_proofPhoto != null ? AppTheme.success : AppTheme.primary).withOpacity(0.1),
+                    color:
+                        (_proofPhoto != null
+                                ? AppTheme.success
+                                : AppTheme.primary)
+                            .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(100),
                   ),
-                  child: Text(_proofPhoto != null ? 'Ganti' : 'Upload',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                          color: _proofPhoto != null ? AppTheme.success : AppTheme.primary)),
+                  child: Text(
+                    _proofPhoto != null ? 'Ganti' : 'Upload',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _proofPhoto != null
+                          ? AppTheme.success
+                          : AppTheme.primary,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -134,28 +201,39 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: _amountController.text.trim().isEmpty ? null : () {
-              final amount = int.tryParse(_amountController.text.trim());
-              if (amount != null && amount > 0) {
-                ref.read(electricityRepositoryProvider).addPurchase(amount, currentUser, _proofPhoto);
-                ref.invalidate(electricityPurchasesProvider);
-                _amountController.clear();
-                setState(() {
-                  _showForm = false;
-                  _proofPhoto = null;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Pembelian listrik dicatat')),
-                );
-              }
-            },
+            onPressed: _amountController.text.trim().isEmpty
+                ? null
+                : () {
+                    final amount = int.tryParse(_amountController.text.trim());
+                    if (amount != null && amount > 0) {
+                      ref
+                          .read(electricityRepositoryProvider)
+                          .addPurchase(amount, currentUser, _proofPhoto);
+                      ref.invalidate(electricityPurchasesProvider);
+                      _amountController.clear();
+                      setState(() {
+                        _showForm = false;
+                        _proofPhoto = null;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pembelian listrik dicatat'),
+                        ),
+                      );
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.success,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             ),
-            child: const Text('Simpan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Simpan',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ],
@@ -170,7 +248,21 @@ class _PurchaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final monthNames = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
     final date = purchase.date;
 
     return Container(
@@ -184,10 +276,21 @@ class _PurchaseCard extends StatelessWidget {
         children: [
           Column(
             children: [
-              Text('${date.day}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              Text(monthNames[date.month],
-                  style: const TextStyle(fontSize: 10, color: AppTheme.neutral500, fontWeight: FontWeight.w600)),
+              Text(
+                '${date.day}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                monthNames[date.month],
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.neutral500,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 12),
@@ -202,15 +305,30 @@ class _PurchaseCard extends StatelessWidget {
                     CircleAvatar(
                       radius: 7,
                       backgroundColor: AppTheme.primary.withOpacity(0.15),
-                      child: Text(purchase.purchasedBy[0],
-                          style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                      child: Text(
+                        purchase.purchasedBy[0],
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 4),
-                    Text(purchase.purchasedBy,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(
+                      purchase.purchasedBy,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     if (purchase.proofPhoto != null) ...[
                       const SizedBox(width: 6),
-                      const Icon(Icons.image_rounded, size: 12, color: AppTheme.primary),
+                      const Icon(
+                        Icons.image_rounded,
+                        size: 12,
+                        color: AppTheme.primary,
+                      ),
                     ],
                   ],
                 ),
@@ -219,7 +337,11 @@ class _PurchaseCard extends StatelessWidget {
           ),
           Text(
             'Rp${purchase.amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.warning),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: AppTheme.warning,
+            ),
           ),
         ],
       ),

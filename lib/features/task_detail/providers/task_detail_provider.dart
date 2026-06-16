@@ -73,4 +73,21 @@ class TaskDetailNotifier extends FamilyAsyncNotifier<TaskDetail, String> {
       Log.e('TaskDetailNotifier', 'toggleChecklist failed', e);
     }
   }
+
+  Future<void> uploadEvidence(String photoUrl, String type) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    try {
+      final repository = ref.read(taskDetailRepositoryProvider);
+      await repository.uploadEvidence(arg, type, photoUrl);
+      if (type == 'before') {
+        state = AsyncData(current.copyWith(beforePhoto: photoUrl));
+      } else {
+        state = AsyncData(current.copyWith(afterPhoto: photoUrl));
+      }
+      ref.invalidateSelf();
+    } catch (e) {
+      Log.e('TaskDetailNotifier', 'uploadEvidence failed', e);
+    }
+  }
 }

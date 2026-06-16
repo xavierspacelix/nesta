@@ -23,30 +23,47 @@ class WaterScreen extends ConsumerWidget {
       body: waterAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat data')),
-        data: (schedule) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              _buildNextBuyerCard(context, ref, schedule, currentUser),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Text('Riwayat', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ...schedule.history.map((h) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _HistoryTile(purchase: h),
-              )),
-            ],
+        data: (schedule) => RefreshIndicator(
+          onRefresh: () => ref.refresh(waterScheduleProvider.future),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                _buildNextBuyerCard(context, ref, schedule, currentUser),
+                const SizedBox(height: 24),
+                const Row(
+                  children: [
+                    Text(
+                      'Riwayat',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...schedule.history.map(
+                  (h) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _HistoryTile(purchase: h),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNextBuyerCard(BuildContext context, WidgetRef ref, WaterSchedule schedule, String currentUser) {
+  Widget _buildNextBuyerCard(
+    BuildContext context,
+    WidgetRef ref,
+    WaterSchedule schedule,
+    String currentUser,
+  ) {
     final isMe = schedule.nextBuyer == currentUser;
 
     return Container(
@@ -69,16 +86,34 @@ class WaterScreen extends ConsumerWidget {
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.water_drop_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text('Giliran Beli', style: TextStyle(color: Colors.white70, fontSize: 13)),
+          const Text(
+            'Giliran Beli',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
           const SizedBox(height: 4),
-          Text(schedule.nextBuyer,
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
+          Text(
+            schedule.nextBuyer,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('${schedule.daysSinceLastPurchase} hari sejak pembelian terakhir',
-              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+          Text(
+            '${schedule.daysSinceLastPurchase} hari sejak pembelian terakhir',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -91,16 +126,25 @@ class WaterScreen extends ConsumerWidget {
                         ref.read(waterRepositoryProvider).markPurchased();
                         ref.invalidate(waterScheduleProvider);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pembelian galon dicatat!')),
+                          const SnackBar(
+                            content: Text('Pembelian galon dicatat!'),
+                          ),
                         );
                       },
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: const Text('Saya Sudah Beli',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      label: const Text(
+                        'Saya Sudah Beli',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppTheme.secondary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                     ),
@@ -113,17 +157,28 @@ class WaterScreen extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Notifikasi dikirim ke ${schedule.nextBuyer}')),
+                          SnackBar(
+                            content: Text(
+                              'Notifikasi dikirim ke ${schedule.nextBuyer}',
+                            ),
+                          ),
                         );
                       },
                       icon: const Icon(Icons.notifications_outlined, size: 18),
-                      label: Text('Ingatkan ${schedule.nextBuyer}',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      label: Text(
+                        'Ingatkan ${schedule.nextBuyer}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.white.withOpacity(0.15),
                         foregroundColor: Colors.white,
                         side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -143,7 +198,21 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final monthNames = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
     final date = purchase.date;
 
     return Container(
@@ -157,10 +226,21 @@ class _HistoryTile extends StatelessWidget {
         children: [
           Column(
             children: [
-              Text('${date.day}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              Text(monthNames[date.month],
-                  style: const TextStyle(fontSize: 10, color: AppTheme.neutral500, fontWeight: FontWeight.w600)),
+              Text(
+                '${date.day}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                monthNames[date.month],
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.neutral500,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 12),
@@ -169,13 +249,26 @@ class _HistoryTile extends StatelessWidget {
           CircleAvatar(
             radius: 10,
             backgroundColor: AppTheme.secondary.withOpacity(0.15),
-            child: Text(purchase.buyerName[0],
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.secondary)),
+            child: Text(
+              purchase.buyerName[0],
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.secondary,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
-          Text(purchase.buyerName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+          Text(
+            purchase.buyerName,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
           const Spacer(),
-          const Icon(Icons.water_drop_rounded, size: 14, color: AppTheme.secondary),
+          const Icon(
+            Icons.water_drop_rounded,
+            size: 14,
+            color: AppTheme.secondary,
+          ),
         ],
       ),
     );

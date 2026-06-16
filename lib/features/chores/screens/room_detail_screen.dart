@@ -33,42 +33,48 @@ class RoomDetailScreen extends ConsumerWidget {
       body: checklistAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Gagal memuat tugas')),
-        data: (items) {
-          if (items.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.checklist_outlined,
-                      size: 64, color: AppTheme.neutral300),
-                  const SizedBox(height: 16),
-                  Text('Belum ada tugas',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 8),
-                  Text('Tambahkan tugas untuk ruangan ini',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.neutral500,
-                          )),
-                ],
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 4),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _ChecklistCard(
-                itemId: item.id,
-                title: item.title,
-                onDelete: () => ref
-                    .read(checklistProvider(roomId).notifier)
-                    .removeItem(item.id),
-              );
-            },
-          );
-        },
+        data: (items) => RefreshIndicator(
+          onRefresh: () async {
+            await ref.refresh(roomsProvider.future);
+            await ref.refresh(checklistProvider(roomId).future);
+          },
+          child: items.isEmpty
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.checklist_outlined,
+                            size: 64, color: AppTheme.neutral300),
+                        const SizedBox(height: 16),
+                        Text('Belum ada tugas',
+                            style: Theme.of(context).textTheme.headlineSmall),
+                        const SizedBox(height: 8),
+                        Text('Tambahkan tugas untuk ruangan ini',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.neutral500,
+                                )),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _ChecklistCard(
+                      itemId: item.id,
+                      title: item.title,
+                      onDelete: () => ref
+                          .read(checklistProvider(roomId).notifier)
+                          .removeItem(item.id),
+                    );
+                  },
+                ),
+        ),
       ),
     );
   }

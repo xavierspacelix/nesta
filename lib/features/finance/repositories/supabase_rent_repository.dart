@@ -3,6 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/rent_record.dart';
 import 'rent_repository.dart';
 
+class _MemberInfo {
+  final String id;
+  final String displayName;
+  _MemberInfo(this.id, this.displayName);
+}
+
 class SupabaseRentRepository implements IRentRepository {
   final SupabaseClient _client;
 
@@ -26,6 +32,19 @@ class SupabaseRentRepository implements IRentRepository {
       final houseId = await _getHouseId();
       if (houseId == null) return [];
 
+      // Always fetch house members for display name resolution
+      final allMembers = await _client
+          .from('profiles')
+          .select('id, name, nickname')
+          .eq('house_id', houseId);
+
+      final memberLookup = <String, _MemberInfo>{};
+      for (final m in allMembers) {
+        final displayName = (m['nickname'] as String?)
+            ?? (m['name'] as String? ?? 'Unknown').split(' ').first;
+        memberLookup[m['id'] as String] = _MemberInfo(m['id'] as String, displayName);
+      }
+
       final records = await _client
           .from('rent_records')
           .select()
@@ -37,21 +56,32 @@ class SupabaseRentRepository implements IRentRepository {
       for (final json in records) {
         final rentId = json['id'] as String;
 
-        // Fetch member payments for this rent record
         final paymentsData = await _client
             .from('member_payments')
             .select('member_id, is_paid, proof_photo, profiles(name, nickname)')
             .eq('rent_record_id', rentId);
 
-        final payments = paymentsData.map((p) {
-          final profile = p['profiles'] as Map;
-          final memberName = (profile['nickname'] as String?) ?? (profile['name'] as String? ?? 'Unknown').split(' ').first;
-          return MemberPayment(
-            memberName: memberName,
-            isPaid: p['is_paid'] as bool? ?? false,
-            proofPhoto: p['proof_photo'] as String?,
-          );
-        }).toList();
+        List<MemberPayment> payments;
+        if (paymentsData.isNotEmpty) {
+          payments = paymentsData.map((p) {
+            final memberId = p['member_id'] as String;
+            final profile = p['profiles'] as Map?;
+            final memberName = profile != null
+                ? ((profile['nickname'] as String?)
+                    ?? (profile['name'] as String? ?? 'Unknown').split(' ').first)
+                : (memberLookup[memberId]?.displayName ?? 'Unknown');
+            return MemberPayment(
+              memberName: memberName,
+              isPaid: p['is_paid'] as bool? ?? false,
+              proofPhoto: p['proof_photo'] as String?,
+            );
+          }).toList();
+        } else {
+          payments = memberLookup.values.map((m) => MemberPayment(
+            memberName: m.displayName,
+            isPaid: false,
+          )).toList();
+        }
 
         result.add(RentRecord(
           year: json['year'] as int,
@@ -92,9 +122,9 @@ class SupabaseRentRepository implements IRentRepository {
 
       final profile = await _client
           .from('profiles')
-          .select('id')
+          .select('id, name, nickname')
           .eq('house_id', houseId)
-          .eq('name', memberName)
+          .or('name.eq.$memberName,nickname.eq.$memberName')
           .maybeSingle();
 
       if (profile == null) return;
@@ -150,12 +180,21 @@ class SupabaseRentRepository implements IRentRepository {
           .select('id')
           .eq('house_id', houseId);
 
+      final existingPayments = await _client
+          .from('member_payments')
+          .select('member_id')
+          .eq('rent_record_id', record['id'] as String);
+
+      final existingMemberIds = existingPayments.map((p) => p['member_id'] as String).toSet();
+
       for (final member in members) {
-        await _client.from('member_payments').upsert({
+        final memberId = member['id'] as String;
+        if (existingMemberIds.contains(memberId)) continue;
+        await _client.from('member_payments').insert({
           'rent_record_id': record['id'],
-          'member_id': member['id'],
+          'member_id': memberId,
           'is_paid': false,
-        }, onConflict: 'rent_record_id,member_id');
+        });
       }
     } catch (e) {
       Log.e('RentRepo', 'setRentAmounts failed', e);

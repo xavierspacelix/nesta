@@ -4,6 +4,7 @@ class HouseMember {
   final int tasksCompleted;
   final int totalFines;
   final String status;
+  final String? avatarUrl;
 
   const HouseMember({
     required this.name,
@@ -11,5 +12,6 @@ class HouseMember {
     required this.tasksCompleted,
     required this.totalFines,
     required this.status,
+    this.avatarUrl,
   });
 }

@@ -17,63 +17,95 @@ class FinancialDashboardScreen extends ConsumerWidget {
     final electricityAsync = ref.watch(electricityPurchasesProvider);
     final waterAsync = ref.watch(waterScheduleProvider);
 
-    final monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final monthNames = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
     final now = DateTime.now();
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Keuangan', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text('${monthNames[now.month]} ${now.year}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.neutral500)),
-              const SizedBox(height: 20),
-              _CategoryCard(
-                icon: Icons.warning_amber_rounded,
-                label: 'Denda',
-                subtitle: 'Belum Dibayar',
-                color: AppTheme.error,
-                trailing: finesAsync.valueOrNull?.length.toString() ?? '0',
-                onTap: () => context.push('/finance/fines'),
-              ),
-              const SizedBox(height: 12),
-              _CategoryCard(
-                icon: Icons.home_work_rounded,
-                label: 'Sewa + WiFi',
-                subtitle: '${monthNames[now.month]} ${now.year}',
-                color: AppTheme.primary,
-                trailing: rentAsync.valueOrNull?.isNotEmpty == true
-                    ? '${rentAsync.valueOrNull!.first.paidCount}/${rentAsync.valueOrNull!.first.totalCount}'
-                    : '-',
-                onTap: () => context.push('/finance/rent'),
-              ),
-              const SizedBox(height: 12),
-              _CategoryCard(
-                icon: Icons.bolt_rounded,
-                label: 'Listrik',
-                subtitle: '${electricityAsync.valueOrNull?.length ?? 0}x pembelian',
-                color: AppTheme.warning,
-                trailing: electricityAsync.valueOrNull?.isNotEmpty == true
-                    ? 'Rp${(_formatAmount(electricityAsync.valueOrNull!.last.amount))}'
-                    : '-',
-                onTap: () => context.push('/finance/electricity'),
-              ),
-              const SizedBox(height: 12),
-              _CategoryCard(
-                icon: Icons.water_drop_rounded,
-                label: 'Galon Air',
-                subtitle: waterAsync.valueOrNull != null
-                    ? 'Giliran: ${waterAsync.valueOrNull!.nextBuyer}'
-                    : 'Memuat...',
-                color: AppTheme.secondary,
-                trailing: '${waterAsync.valueOrNull?.daysSinceLastPurchase ?? 0} hari',
-                onTap: () => context.push('/finance/water'),
-              ),
-            ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await ref.refresh(currentFinesProvider.future);
+            await ref.refresh(rentHistoryProvider.future);
+            await ref.refresh(electricityPurchasesProvider.future);
+            await ref.refresh(waterScheduleProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Keuangan',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${monthNames[now.month]} ${now.year}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppTheme.neutral500),
+                ),
+                const SizedBox(height: 20),
+                _CategoryCard(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'Denda',
+                  subtitle: 'Belum Dibayar',
+                  color: AppTheme.error,
+                  trailing: finesAsync.valueOrNull?.length.toString() ?? '0',
+                  onTap: () => context.push('/finance/fines'),
+                ),
+                const SizedBox(height: 12),
+                _CategoryCard(
+                  icon: Icons.home_work_rounded,
+                  label: 'Sewa + WiFi',
+                  subtitle: '${monthNames[now.month]} ${now.year}',
+                  color: AppTheme.primary,
+                  trailing: rentAsync.valueOrNull?.isNotEmpty == true
+                      ? '${rentAsync.valueOrNull!.first.paidCount}/${rentAsync.valueOrNull!.first.totalCount}'
+                      : '-',
+                  onTap: () => context.push('/finance/rent'),
+                ),
+                const SizedBox(height: 12),
+                _CategoryCard(
+                  icon: Icons.bolt_rounded,
+                  label: 'Listrik',
+                  subtitle:
+                      '${electricityAsync.valueOrNull?.length ?? 0}x pembelian',
+                  color: AppTheme.warning,
+                  trailing: electricityAsync.valueOrNull?.isNotEmpty == true
+                      ? 'Rp${(_formatAmount(electricityAsync.valueOrNull!.last.amount))}'
+                      : '-',
+                  onTap: () => context.push('/finance/electricity'),
+                ),
+                const SizedBox(height: 12),
+                _CategoryCard(
+                  icon: Icons.water_drop_rounded,
+                  label: 'Galon Air',
+                  subtitle: waterAsync.valueOrNull != null
+                      ? 'Giliran: ${waterAsync.valueOrNull!.nextBuyer}'
+                      : 'Memuat...',
+                  color: AppTheme.secondary,
+                  trailing:
+                      '${waterAsync.valueOrNull?.daysSinceLastPurchase ?? 0} hari',
+                  onTap: () => context.push('/finance/water'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -82,7 +114,10 @@ class FinancialDashboardScreen extends ConsumerWidget {
 
   String _formatAmount(int amount) {
     final s = amount.toString();
-    return s.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+    return s.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
   }
 }
 
@@ -114,7 +149,11 @@ class _CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.neutral200),
           boxShadow: [
-            BoxShadow(color: AppTheme.neutral200.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: AppTheme.neutral200.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Row(
@@ -133,15 +172,38 @@ class _CategoryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.neutral500)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.neutral500,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Text(trailing, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: color)),
+            Text(
+              trailing,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: color,
+              ),
+            ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.neutral400, size: 20),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.neutral400,
+              size: 20,
+            ),
           ],
         ),
       ),

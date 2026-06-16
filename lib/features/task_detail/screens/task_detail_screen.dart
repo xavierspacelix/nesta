@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/storage_provider.dart';
+import 'package:nesta/core/services/logger.dart';
+import 'package:nesta/core/utils/image_picker_helper.dart';
 import 'package:nesta/features/task_detail/models/checklist_progress.dart';
 import 'package:nesta/features/task_detail/providers/task_detail_provider.dart';
 import 'package:nesta/features/task_detail/models/task_detail.dart';
@@ -25,13 +28,17 @@ class TaskDetailScreen extends ConsumerWidget {
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Gagal memuat detail tugas')),
-        data: (detail) => _buildContent(context, ref, detail),
+        data: (detail) => RefreshIndicator(
+          onRefresh: () => ref.refresh(taskDetailProvider(taskId).future),
+          child: _buildContent(context, ref, detail),
+        ),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, TaskDetail detail) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,6 +293,7 @@ class TaskDetailScreen extends ConsumerWidget {
               child: _PhotoCard(
                 label: 'Sebelum',
                 photoUrl: detail.beforePhoto,
+                onPick: (bytes, fileName) => _uploadEvidence(ref, detail.id, 'before', bytes, fileName),
               ),
             ),
             const SizedBox(width: 12),
@@ -293,12 +301,33 @@ class TaskDetailScreen extends ConsumerWidget {
               child: _PhotoCard(
                 label: 'Sesudah',
                 photoUrl: detail.afterPhoto,
+                onPick: (bytes, fileName) => _uploadEvidence(ref, detail.id, 'after', bytes, fileName),
               ),
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _uploadEvidence(
+    WidgetRef ref,
+    String taskId,
+    String type,
+    List<int> bytes,
+    String fileName,
+  ) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final url = await storage.uploadFile(
+        folder: 'task-evidence/$type',
+        fileName: fileName,
+        bytes: bytes,
+      );
+      ref.read(taskDetailProvider(taskId).notifier).uploadEvidence(url, type);
+    } catch (e) {
+      Log.e('TaskEvidence', 'upload $type failed', e);
+    }
   }
 
   Widget _buildChecklistSection(
@@ -342,8 +371,69 @@ class TaskDetailScreen extends ConsumerWidget {
 class _PhotoCard extends StatelessWidget {
   final String label;
   final String? photoUrl;
+  final Future<void> Function(List<int> bytes, String fileName)? onPick;
 
-  const _PhotoCard({required this.label, this.photoUrl});
+  const _PhotoCard({required this.label, this.photoUrl, this.onPick});
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.neutral300, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 24),
+              const Text('Ambil Foto', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final picked = await ImagePickerHelper.pickFromCamera();
+                    if (picked != null && onPick != null) onPick!(picked.bytes, picked.fileName);
+                  },
+                  icon: const Icon(Icons.camera_alt_rounded, size: 20),
+                  label: const Text('Kamera', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final picked = await ImagePickerHelper.pickFromGallery();
+                    if (picked != null && onPick != null) onPick!(picked.bytes, picked.fileName);
+                  },
+                  icon: const Icon(Icons.photo_library_rounded, size: 20),
+                  label: const Text('Galeri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -359,19 +449,26 @@ class _PhotoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () {},
+          onTap: () {
+            if (onPick != null) {
+              _showPicker(context);
+            }
+          },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                photoUrl != null
-                    ? Icons.check_circle_rounded
-                    : Icons.camera_alt_outlined,
-                size: 32,
-                color: photoUrl != null
-                    ? AppTheme.success
-                    : AppTheme.neutral400,
-              ),
+              if (photoUrl != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    photoUrl!,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(Icons.broken_image_rounded, size: 32, color: AppTheme.neutral400),
+                  ),
+                )
+              else
+                Icon(Icons.camera_alt_outlined, size: 32, color: AppTheme.neutral400),
               const SizedBox(height: 8),
               Text(
                 label,

@@ -92,4 +92,17 @@ class SupabaseTaskVerificationRepository implements ITaskVerificationRepository 
       rethrow;
     }
   }
+
+  @override
+  Future<void> approveTask(String taskId) async {
+    try {
+      await _client.from('assignments').update({
+        'status': 'completed',
+        'completed_at': DateTime.now().toIso8601String(),
+      }).eq('id', taskId);
+    } catch (e) {
+      Log.e('TaskVerifRepo', 'approveTask failed', e);
+      rethrow;
+    }
+  }
 }
