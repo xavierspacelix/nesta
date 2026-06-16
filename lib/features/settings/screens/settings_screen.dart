@@ -5,12 +5,33 @@ import 'package:nesta/app/theme/app_theme.dart';
 import 'package:nesta/core/models/notification_type.dart';
 import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/features/auth/providers/auth_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _appVersion = '1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _appVersion = '${info.version}+${info.buildNumber}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final enabled = ref.watch(notificationEnabledProvider);
 
     return Scaffold(
@@ -34,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           _buildSectionHeader('Tentang'),
           const SizedBox(height: 8),
-          _buildMenuTile('Versi 1.0.0', Icons.info_outline_rounded),
+          _buildMenuTile('Versi $_appVersion', Icons.info_outline_rounded),
           const SizedBox(height: 32),
           _buildLogoutButton(context, ref),
         ],

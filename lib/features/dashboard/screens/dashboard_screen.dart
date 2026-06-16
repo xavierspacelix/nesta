@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/update_provider.dart';
+import 'package:nesta/core/widgets/update_dialog.dart';
 import 'package:nesta/features/chores/models/chore.dart';
 import 'package:nesta/features/chores/providers/chores_provider.dart';
 import 'package:nesta/features/finance/providers/finance_provider.dart';
@@ -11,11 +13,44 @@ import 'package:nesta/features/house/providers/house_provider.dart';
 import 'package:nesta/features/schedule/models/upcoming_task.dart';
 import 'package:nesta/features/schedule/providers/schedule_provider.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _hasCheckedUpdate = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasCheckedUpdate) {
+      _hasCheckedUpdate = true;
+      _checkForUpdate();
+    }
+  }
+
+  Future<void> _checkForUpdate() async {
+    final result = await ref.read(updateCheckProvider.future);
+    if (!mounted) return;
+
+    if (result.status == UpdateStatus.upToDate || result.version == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: result.status != UpdateStatus.force,
+      builder: (_) => UpdateDialog(
+        version: result.version!,
+        isForce: result.status == UpdateStatus.force,
+      ),
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(

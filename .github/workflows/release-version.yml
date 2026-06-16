@@ -1,0 +1,43 @@
+name: Sync Release to Supabase
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse release data
+        id: parse
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          BUILD_NUMBER="${VERSION##*+}"
+          echo "version=$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Get asset URL
+        id: asset
+        run: |
+          ASSET_URL=$(echo '${{ toJSON(github.event.release.assets) }}' | jq -r '.[0].browser_download_url // empty')
+          echo "url=$ASSET_URL" >> $GITHUB_OUTPUT
+
+      - name: Insert into Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          curl -X POST "$SUPABASE_URL/rest/v1/app_versions" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates" \
+            -d '{
+              "version": "${{ steps.parse.outputs.version }}",
+              "build_number": ${{ steps.parse.outputs.build_number }},
+              "force_update": false,
+              "changelog": "${{ github.event.release.body }}",
+              "apk_url": "${{ steps.asset.outputs.url }}"
+            }'
