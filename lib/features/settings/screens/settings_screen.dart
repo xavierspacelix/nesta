@@ -49,8 +49,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildMenuTile('Profil', Icons.person_outline_rounded, onTap: () => context.push('/settings/profile')),
           _buildMenuTile('Rumah', Icons.home_outlined, onTap: () => context.push('/settings/house')),
           const SizedBox(height: 24),
-          _buildNotificationSection(enabled, () {
-            ref.read(notificationEnabledProvider.notifier).toggle();
+          _buildNotificationSection(enabled, () async {
+            final notifier = ref.read(notificationEnabledProvider.notifier);
+            final next = !enabled;
+            if (next) {
+              final granted = await ref.read(notificationServiceProvider).requestPermission();
+              if (!granted) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Izin notifikasi ditolak. Aktifkan dari Pengaturan Android.')),
+                  );
+                }
+                return;
+              }
+            } else {
+              for (final type in NotificationType.values) {
+                await ref.read(notificationServiceProvider).cancelScheduled(type);
+              }
+            }
+            notifier.toggle();
           }),
           const SizedBox(height: 32),
           _buildSectionHeader('Tentang'),

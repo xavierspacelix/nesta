@@ -8,6 +8,9 @@
 
 ### Added
 - `scripts/release.sh` — script lokal untuk insert `app_versions` ke Supabase
+- **Notifikasi**: FCM service diinisialisasi dari `SplashScreen` (bukan lazy dari screen lain)
+- **Permission notifikasi**: `requestPermission()` dipanggil di `init()` sebelum `getToken()`, jadi dialog izin notifikasi muncul saat pertama kali app dibuka
+- **Toggle notifikasi di Settings**: Switch notifikasi sekarang benar-benar minta permission saat diaktifkan, dan cancel scheduled notifications saat dinonaktifkan
 
 ## [1.2.0] - 2026-06-17
 
