@@ -1,11 +1,14 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_repository.dart';
 
 class SupabaseAuthRepository implements IAuthRepository {
   final GoTrueClient _auth;
+  final GoogleSignIn _googleSignIn;
 
-  SupabaseAuthRepository(this._auth);
+  SupabaseAuthRepository(this._auth)
+    : _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
   @override
   Future<User?> getCurrentUser() async {
@@ -30,13 +33,28 @@ class SupabaseAuthRepository implements IAuthRepository {
   @override
   Future<User?> signInWithGoogle() async {
     Log.i('AuthRepo', 'signInWithGoogle');
-    final response = await _auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: null,
-    );
-    final session = _auth.currentSession;
-    Log.i('AuthRepo', 'google signin: ${session?.user.email ?? 'failed'}');
-    return session?.user;
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        Log.w('AuthRepo', 'google sign in cancelled');
+        return null;
+      }
+      final authentication = await account.authentication;
+      if (authentication.idToken == null) {
+        Log.e('AuthRepo', 'no idToken from google', null);
+        return null;
+      }
+      final response = await _auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: authentication.idToken!,
+      );
+      final user = response.user;
+      Log.i('AuthRepo', 'google signin: ${user?.email ?? 'failed'}');
+      return user;
+    } catch (e) {
+      Log.e('AuthRepo', 'google signin error', e);
+      rethrow;
+    }
   }
 
   @override
@@ -75,6 +93,6 @@ class SupabaseAuthRepository implements IAuthRepository {
   @override
   Future<void> signOut() async {
     Log.i('AuthRepo', 'signOut');
-    await _auth.signOut();
+    await Future.wait<void>([_auth.signOut(), _googleSignIn.disconnect()]);
   }
 }

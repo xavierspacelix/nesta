@@ -51,3 +51,5 @@ skills-lock.json
 memory.md
 supabase/.temp/
 android/app/*firebase-adminsdk*
+android/app/google-services.json
+android/app/client_secret_*.json
