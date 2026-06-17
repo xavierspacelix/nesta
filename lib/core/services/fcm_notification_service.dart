@@ -32,11 +32,12 @@ class FCMNotificationService implements INotificationService {
       const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
 
-    _fcm.getToken().then((token) {
-      if (token != null) {
-        _tokenRepo.upsert(token, Platform.operatingSystem);
-      }
-    });
+    await requestPermission();
+
+    final token = await _fcm.getToken();
+    if (token != null) {
+      await _tokenRepo.upsert(token, Platform.operatingSystem);
+    }
 
     _fcm.onTokenRefresh.listen((token) {
       _tokenRepo.upsert(token, Platform.operatingSystem);

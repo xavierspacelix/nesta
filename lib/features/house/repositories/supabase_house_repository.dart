@@ -26,7 +26,7 @@ class SupabaseHouseRepository implements IHouseRepository {
   Future<House?> joinHouse(String inviteCode, String userId) async {
     Log.i('HouseRepo', 'joinHouse: code=$inviteCode userId=$userId');
     final response = await _client.rpc('get_house_by_invite', params: {
-      'code': inviteCode,
+      'code': inviteCode.toLowerCase(),
     });
 
     if (response == null) {

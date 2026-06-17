@@ -1,3 +1,17 @@
+## [1.2.1] - 2026-06-17
+
+### Fixed
+- **Google Login redirect**: Welcome screen sekarang pakai `ref.listen` untuk navigasi — lebih robust daripada `onPressed` callback yang context-nya bisa stale setelah widget rebuild.
+- **Changelog di Version Screen**: `updateCheckProvider` sekarang selalu return data versi, jadi changelog tetap tampil meskipun sudah di versi terbaru.
+- **Join house**: Hapus `textCapitalization` yang bikin input jadi UPPERCASE sementara kode di DB lowercase. Input sekarang di-lowercase sebelum dikirim ke DB.
+- **CI/CD**: Release workflow JSON payload gagal karena changelog multiline tidak di-escape. Sekarang pakai `jq --rawfile` dan heredoc untuk handle encoding otomatis.
+
+### Added
+- `scripts/release.sh` — script lokal untuk insert `app_versions` ke Supabase
+- **Notifikasi**: FCM service diinisialisasi dari `SplashScreen` (bukan lazy dari screen lain)
+- **Permission notifikasi**: `requestPermission()` dipanggil di `init()` sebelum `getToken()`, jadi dialog izin notifikasi muncul saat pertama kali app dibuka
+- **Toggle notifikasi di Settings**: Switch notifikasi sekarang benar-benar minta permission saat diaktifkan, dan cancel scheduled notifications saat dinonaktifkan
+
 ## [1.2.0] - 2026-06-17
 
 ### Added
