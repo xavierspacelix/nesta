@@ -20,16 +20,20 @@ class UpdateDialog extends StatefulWidget {
 class _UpdateDialogState extends State<UpdateDialog> {
   final _service = DownloadService();
   bool _isDownloading = false;
+  bool _isReady = false;
   double _progress = 0;
+  String? _apkPath;
+  String? _error;
 
   Future<void> _downloadAndInstall() async {
     setState(() {
       _isDownloading = true;
       _progress = 0;
+      _error = null;
     });
 
     try {
-      final path = await _service.downloadApk(
+      _apkPath = await _service.downloadApk(
         widget.version.apkUrl,
         onProgress: (received, total) {
           if (total > 0) {
@@ -37,14 +41,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
           }
         },
       );
-      await _service.installApk(path);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengunduh pembaruan. Silakan coba lagi.')),
-        );
-      }
+      setState(() => _isReady = true);
+      await _service.installApk(_apkPath!);
+    } catch (e) {
+      setState(() {
+        _isDownloading = false;
+        _isReady = false;
+        _error = 'Gagal membuka penginstal. Aktifkan "Instal dari sumber tidak dikenal" di pengaturan, lalu coba lagi.';
+      });
     }
+  }
+
+  Future<void> _openSettings() async {
+    await DownloadService.openInstallSettings();
   }
 
   @override
@@ -83,12 +92,40 @@ class _UpdateDialogState extends State<UpdateDialog> {
               const SizedBox(height: 12),
               const Text('Perubahan:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 4),
-              Text(
-                widget.version.changelog,
-                style: const TextStyle(fontSize: 13, color: AppTheme.neutral600),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.neutral50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: widget.version.changelog
+                      .split('\n')
+                      .where((l) => l.trim().isNotEmpty)
+                      .map((line) {
+                    final clean = line.replaceAll(RegExp(r'^#{1,3}\s*'), '')
+                        .replaceAll(RegExp(r'^\*\*\s*'), '')
+                        .trimLeft();
+                    final isSection = line.startsWith('##');
+                    final isItem = line.trimLeft().startsWith('- ');
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 4, left: isItem ? 12 : 0),
+                      child: Text(
+                        isItem ? clean.replaceFirst('- ', '• ') : clean,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSection ? FontWeight.w700 : FontWeight.w400,
+                          color: isSection ? AppTheme.neutral800 : AppTheme.neutral600,
+                          height: 1.4,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ],
-            if (_isDownloading) ...[
+            if (_isDownloading && !_isReady) ...[
               const SizedBox(height: 16),
               LinearProgressIndicator(
                 value: _progress,
@@ -103,15 +140,67 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 style: const TextStyle(fontSize: 12, color: AppTheme.neutral500),
               ),
             ],
+            if (_isReady) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.warning),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Izinkan instalasi dari sumber tidak dikenal di pengaturan untuk melanjutkan.',
+                        style: TextStyle(fontSize: 12, color: AppTheme.neutral700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _error!,
+                      style: const TextStyle(fontSize: 12, color: AppTheme.error),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: _openSettings,
+                      icon: const Icon(Icons.settings_rounded, size: 16),
+                      label: const Text('Buka Pengaturan', style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
-          if (!widget.isForce && !_isDownloading)
+          if (!widget.isForce && !_isDownloading && _error == null)
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Nanti Saja'),
             ),
-          if (!_isDownloading)
+          if (!_isDownloading && _error == null)
             ElevatedButton(
               onPressed: _downloadAndInstall,
               style: ElevatedButton.styleFrom(
@@ -120,6 +209,17 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Perbarui Sekarang'),
+            ),
+          if (_isReady || _error != null)
+            ElevatedButton.icon(
+              onPressed: _isReady ? () => _service.installApk(_apkPath!) : _openSettings,
+              icon: Icon(_isReady ? Icons.file_open_rounded : Icons.settings_rounded, size: 18),
+              label: Text(_isReady ? 'Buka Penginstal' : 'Buka Pengaturan'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
         ],
       ),

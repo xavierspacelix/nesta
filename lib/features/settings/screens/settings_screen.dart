@@ -55,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 32),
           _buildSectionHeader('Tentang'),
           const SizedBox(height: 8),
-          _buildMenuTile('Versi $_appVersion', Icons.info_outline_rounded),
+          _buildMenuTile('Versi $_appVersion', Icons.info_outline_rounded, onTap: () => context.push('/settings/version')),
           const SizedBox(height: 32),
           _buildLogoutButton(context, ref),
         ],

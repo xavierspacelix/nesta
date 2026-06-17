@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/widgets/auth_image.dart';
 import 'package:nesta/features/finance/models/water_schedule.dart';
@@ -260,6 +261,14 @@ class WaterScreen extends ConsumerWidget {
             onPressed: () async {
               try {
                 await ref.read(waterRepositoryProvider).verifyPurchase(purchase.id);
+                final authState = ref.read(authProvider);
+                if (authState.houseId != null) {
+                  ref.read(pushNotificationSenderProvider).sendToHouse(
+                    houseId: authState.houseId!,
+                    title: 'Pembelian Galon Diverifikasi',
+                    body: 'Pembelian galon air diverifikasi oleh admin.',
+                  );
+                }
                 ref.invalidate(waterScheduleProvider);
                 if (!context.mounted) return;
                 Navigator.pop(context);
@@ -424,6 +433,11 @@ class WaterScreen extends ConsumerWidget {
                               userId: authState.userId ?? '',
                               description: 'membeli galon air',
                               category: 'fine',
+                            );
+                            ref.read(pushNotificationSenderProvider).sendToHouse(
+                              houseId: authState.houseId!,
+                              title: 'Pembelian Galon Air',
+                              body: 'Seorang anggota mencatat pembelian galon air.',
                             );
                           }
                           ref.invalidate(waterScheduleProvider);

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,6 +47,7 @@ class _JoinHouseScreenState extends ConsumerState<JoinHouseScreen> {
       );
 
       if (house != null) {
+        await FirebaseMessaging.instance.subscribeToTopic('house_${house.id}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Berhasil gabung ke rumah!')),

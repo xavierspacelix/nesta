@@ -49,3 +49,5 @@ app.*.map.json
 context/
 skills-lock.json
 memory.md
+supabase/.temp/
+android/app/*firebase-adminsdk*

@@ -66,6 +66,13 @@ class SwapApprovalScreen extends ConsumerWidget {
                         'Tukar Jadwal Disetujui',
                         '${req.requesterName} — ${req.targetMemberName}',
                       );
+                      if (authState.houseId != null) {
+                        ref.read(pushNotificationSenderProvider).sendToHouse(
+                          houseId: authState.houseId!,
+                          title: 'Tukar Jadwal Disetujui',
+                          body: '${req.requesterName} — ${req.targetMemberName}',
+                        );
+                      }
                       ref.invalidate(pendingSwapsProvider);
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,6 +105,13 @@ class SwapApprovalScreen extends ConsumerWidget {
                         'Tukar Jadwal Ditolak',
                         '${req.requesterName} — ${req.targetMemberName}',
                       );
+                      if (authState.houseId != null) {
+                        ref.read(pushNotificationSenderProvider).sendToHouse(
+                          houseId: authState.houseId!,
+                          title: 'Tukar Jadwal Ditolak',
+                          body: '${req.requesterName} — ${req.targetMemberName}',
+                        );
+                      }
                       ref.invalidate(pendingSwapsProvider);
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
