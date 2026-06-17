@@ -23,6 +23,18 @@ class WelcomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
+    ref.listen(authProvider, (prev, next) {
+      if (prev?.status == AuthStatus.loading) {
+        if (next.status == AuthStatus.authenticated) {
+          if (next.houseId != null) {
+            context.go('/dashboard');
+          } else {
+            context.go('/house/select');
+          }
+        }
+      }
+    });
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -66,17 +78,7 @@ class WelcomeScreen extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: authState.status == AuthStatus.loading
                       ? null
-                      : () async {
-                          await ref.read(authProvider.notifier).loginWithGoogle();
-                          final newState = ref.read(authProvider);
-                          if (newState.status == AuthStatus.authenticated) {
-                            if (newState.houseId != null) {
-                              context.go('/dashboard');
-                            } else {
-                              context.go('/house/select');
-                            }
-                          }
-                        },
+                      : () => ref.read(authProvider.notifier).loginWithGoogle(),
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

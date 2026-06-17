@@ -104,10 +104,9 @@ class _JoinHouseScreenState extends ConsumerState<JoinHouseScreen> {
                 key: _formKey,
                 child: TextFormField(
                   controller: _codeController,
-                  textCapitalization: TextCapitalization.characters,
                   decoration: const InputDecoration(
                     labelText: 'Kode Undangan',
-                    hintText: 'Misal: NESTA-XYZ123',
+                    hintText: 'Masukkan kode undangan',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {

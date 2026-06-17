@@ -29,7 +29,7 @@ final updateCheckProvider = FutureProvider<UpdateCheckResult>((ref) async {
   final currentBuild = int.tryParse(info.buildNumber) ?? 0;
 
   if (currentBuild >= latest.buildNumber) {
-    return const UpdateCheckResult(status: UpdateStatus.upToDate);
+    return UpdateCheckResult(status: UpdateStatus.upToDate, version: latest);
   }
 
   final status = latest.forceUpdate ? UpdateStatus.force : UpdateStatus.optional;
