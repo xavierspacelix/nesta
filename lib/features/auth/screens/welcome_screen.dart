@@ -66,7 +66,17 @@ class WelcomeScreen extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: authState.status == AuthStatus.loading
                       ? null
-                      : () => ref.read(authProvider.notifier).loginWithGoogle(),
+                      : () async {
+                          await ref.read(authProvider.notifier).loginWithGoogle();
+                          final newState = ref.read(authProvider);
+                          if (newState.status == AuthStatus.authenticated) {
+                            if (newState.houseId != null) {
+                              context.go('/dashboard');
+                            } else {
+                              context.go('/house/select');
+                            }
+                          }
+                        },
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
