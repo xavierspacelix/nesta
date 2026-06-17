@@ -24,20 +24,37 @@ jobs:
           ASSET_URL=$(echo '${{ toJSON(github.event.release.assets) }}' | jq -r '.[0].browser_download_url // empty')
           echo "url=$ASSET_URL" >> $GITHUB_OUTPUT
 
+      - name: Write changelog to file
+        run: |
+          cat > /tmp/changelog.md << 'NESTA_EOF'
+          ${{ github.event.release.body }}
+          NESTA_EOF
+
       - name: Insert into Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VERSION: ${{ steps.parse.outputs.version }}
+          BUILD_NUMBER: ${{ steps.parse.outputs.build_number }}
+          APK_URL: ${{ steps.asset.outputs.url }}
         run: |
-          curl -X POST "$SUPABASE_URL/rest/v1/app_versions" \
+          JSON=$(jq -n \
+            --arg version "$VERSION" \
+            --argjson build_number "$BUILD_NUMBER" \
+            --argjson force_update false \
+            --rawfile changelog /tmp/changelog.md \
+            --arg apk_url "$APK_URL" \
+            '{
+              version: $version,
+              build_number: $build_number,
+              force_update: $force_update,
+              changelog: $changelog,
+              apk_url: $apk_url
+            }')
+
+          curl -sS -X POST "$SUPABASE_URL/rest/v1/app_versions" \
             -H "apikey: $SUPABASE_SERVICE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
             -H "Content-Type: application/json" \
             -H "Prefer: resolution=merge-duplicates" \
-            -d '{
-              "version": "${{ steps.parse.outputs.version }}",
-              "build_number": ${{ steps.parse.outputs.build_number }},
-              "force_update": false,
-              "changelog": "${{ github.event.release.body }}",
-              "apk_url": "${{ steps.asset.outputs.url }}"
-            }'
+            -d "$JSON"
