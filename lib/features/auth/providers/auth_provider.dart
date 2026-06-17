@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nesta/core/services/logger.dart';
@@ -80,6 +81,7 @@ class AuthNotifier extends Notifier<AuthState> {
           userId: user.id,
           houseId: houseId,
         );
+        _subscribeToHouseTopic(houseId);
       } else {
         Log.w('Auth', 'no session');
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -106,6 +108,7 @@ class AuthNotifier extends Notifier<AuthState> {
           userId: user.id,
           houseId: houseId,
         );
+        _subscribeToHouseTopic(houseId);
       } else {
         Log.w('Auth', 'google login returned null');
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -132,6 +135,7 @@ class AuthNotifier extends Notifier<AuthState> {
           userId: user.id,
           houseId: houseId,
         );
+        _subscribeToHouseTopic(houseId);
       } else {
         Log.w('Auth', 'email login returned null');
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -157,6 +161,7 @@ class AuthNotifier extends Notifier<AuthState> {
           userId: user.id,
           houseId: houseId,
         );
+        _subscribeToHouseTopic(houseId);
       } else {
         Log.w('Auth', 'register returned null (email confirmation needed)');
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -166,6 +171,28 @@ class AuthNotifier extends Notifier<AuthState> {
       Log.e('Auth', 'register error', e);
       state = state.copyWith(status: AuthStatus.unauthenticated);
       return null;
+    }
+  }
+
+  Future<void> _subscribeToHouseTopic(String? houseId) async {
+    try {
+      if (houseId != null) {
+        await FirebaseMessaging.instance.subscribeToTopic('house_$houseId');
+        Log.d('Auth', 'subscribed to house_$houseId');
+      }
+    } catch (e) {
+      Log.e('Auth', 'topic subscribe failed', e);
+    }
+  }
+
+  Future<void> _unsubscribeFromHouseTopic(String? houseId) async {
+    try {
+      if (houseId != null) {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('house_$houseId');
+        Log.d('Auth', 'unsubscribed from house_$houseId');
+      }
+    } catch (e) {
+      Log.e('Auth', 'topic unsubscribe failed', e);
     }
   }
 
@@ -179,10 +206,12 @@ class AuthNotifier extends Notifier<AuthState> {
       userId: user.id,
       houseId: houseId,
     );
+    _subscribeToHouseTopic(houseId);
   }
 
   void logout() {
     Log.i('Auth', 'logout');
+    _unsubscribeFromHouseTopic(state.houseId);
     _authRepository.signOut();
     state = const AuthState();
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
@@ -288,6 +289,14 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
             onPressed: () async {
               try {
                 await ref.read(electricityRepositoryProvider).verifyPurchase(purchase.id);
+                final authState = ref.read(authProvider);
+                if (authState.houseId != null) {
+                  ref.read(pushNotificationSenderProvider).sendToHouse(
+                    houseId: authState.houseId!,
+                    title: 'Pembelian Listrik Diverifikasi',
+                    body: 'Pembelian listrik diverifikasi oleh admin.',
+                  );
+                }
                 ref.invalidate(electricityPurchasesProvider);
                 if (!context.mounted) return;
                 Navigator.pop(context);
@@ -498,6 +507,11 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                           userId: authState.userId ?? '',
                           description: 'membeli listrik',
                           category: 'fine',
+                        );
+                        ref.read(pushNotificationSenderProvider).sendToHouse(
+                          houseId: authState.houseId!,
+                          title: 'Pembelian Listrik',
+                          body: 'Seorang anggota mencatat pembelian listrik.',
                         );
                       }
                       ref.invalidate(electricityPurchasesProvider);

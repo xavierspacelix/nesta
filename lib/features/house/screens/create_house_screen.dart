@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,7 @@ class _CreateHouseScreenState extends ConsumerState<CreateHouseScreen> {
     try {
       final repository = ref.read(houseRepositoryProvider);
       final house = await repository.createHouse(_nameController.text.trim());
+      await FirebaseMessaging.instance.subscribeToTopic('house_${house.id}');
 
       if (mounted) {
         context.push('/house/invite', extra: house.inviteCode);

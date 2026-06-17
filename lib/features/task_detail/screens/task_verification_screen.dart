@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/models/notification_type.dart';
+import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/core/services/logger.dart';
+import 'package:nesta/features/auth/providers/auth_provider.dart';
 import 'package:nesta/features/task_detail/models/task_verification.dart';
 import 'package:nesta/features/task_detail/providers/task_detail_provider.dart';
 import 'package:nesta/features/task_detail/providers/task_verification_provider.dart';
@@ -31,6 +34,19 @@ class _TaskVerificationScreenState
         _approved = true;
         _approving = false;
       });
+      ref.read(notificationServiceProvider).notify(
+        NotificationType.missedDuty,
+        'Tugas Selesai',
+        'Tugas berhasil diverifikasi dan diselesaikan.',
+      );
+      final authState = ref.read(authProvider);
+      if (authState.houseId != null) {
+        ref.read(pushNotificationSenderProvider).sendToHouse(
+          houseId: authState.houseId!,
+          title: 'Tugas Selesai',
+          body: 'Sebuah tugas berhasil diverifikasi dan diselesaikan.',
+        );
+      }
       ref.refresh(taskVerificationProvider(widget.taskId));
       ref.refresh(taskDetailProvider(widget.taskId));
     } catch (e) {

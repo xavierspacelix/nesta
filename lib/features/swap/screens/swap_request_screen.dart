@@ -133,6 +133,13 @@ class _SwapRequestScreenState extends ConsumerState<SwapRequestScreen> {
       'Permintaan Tukar Jadwal',
       'Budi meminta tukar jadwal dengan $_selectedMember',
     );
+    if (authState.houseId != null) {
+      ref.read(pushNotificationSenderProvider).sendToHouse(
+        houseId: authState.houseId!,
+        title: 'Permintaan Tukar Jadwal',
+        body: 'Budi meminta tukar jadwal dengan $_selectedMember',
+      );
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Permintaan tukar jadwal berhasil dikirim')),

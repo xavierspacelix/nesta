@@ -29,6 +29,7 @@ import 'package:nesta/features/settings/screens/settings_screen.dart';
 import 'package:nesta/features/settings/screens/profile_screen.dart';
 import 'package:nesta/features/settings/screens/house_screen.dart';
 import 'package:nesta/features/settings/screens/home_management_screen.dart';
+import 'package:nesta/features/version/screens/version_detail_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -152,6 +153,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/settings/house/manage',
       builder: (context, state) => const HomeManagementScreen(),
+    ),
+    GoRoute(
+      path: '/settings/version',
+      builder: (context, state) => const VersionDetailScreen(),
     ),
     GoRoute(
       path: '/rooms/:roomId',

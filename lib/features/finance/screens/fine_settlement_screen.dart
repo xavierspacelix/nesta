@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
@@ -143,6 +144,11 @@ class FineSettlementScreen extends ConsumerWidget {
           description: 'melakukan pembayaran denda',
           category: 'fine',
         );
+        ref.read(pushNotificationSenderProvider).sendToHouse(
+          houseId: authState.houseId!,
+          title: 'Pembayaran Denda',
+          body: 'Seorang anggota melakukan pembayaran denda.',
+        );
       }
       ref.invalidate(fineByIdProvider(fine.id));
       if (!context.mounted) return;
@@ -255,6 +261,11 @@ class FineSettlementScreen extends ConsumerWidget {
           description: 'memverifikasi pembayaran kamu',
           category: 'fine',
           targetUserId: fine.memberId,
+        );
+        ref.read(pushNotificationSenderProvider).sendToHouse(
+          houseId: authState.houseId!,
+          title: 'Pembayaran Denda Diverifikasi',
+          body: 'Pembayaran denda diverifikasi oleh admin.',
         );
       }
       ref.invalidate(fineByIdProvider(fine.id));

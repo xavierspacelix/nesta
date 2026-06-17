@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nesta/app/theme/app_theme.dart';
+import 'package:nesta/core/models/notification_type.dart';
+import 'package:nesta/core/providers/notification_provider.dart';
 import 'package:nesta/core/providers/storage_provider.dart';
 import 'package:nesta/core/services/logger.dart';
 import 'package:nesta/core/utils/image_picker_helper.dart';
@@ -393,6 +395,11 @@ class RentScreen extends ConsumerWidget {
                     category: 'fine',
                     targetUserId: payment.memberId,
                   );
+                  ref.read(pushNotificationSenderProvider).sendToHouse(
+                    houseId: authState.houseId!,
+                    title: 'Pembayaran Sewa Diverifikasi',
+                    body: 'Pembayaran sewa diverifikasi oleh admin.',
+                  );
                 }
                 ref.invalidate(rentHistoryProvider);
                 if (!context.mounted) return;
@@ -462,6 +469,11 @@ class RentScreen extends ConsumerWidget {
                   description: 'melakukan pembayaran sewa',
                   category: 'fine',
                 );
+              ref.read(pushNotificationSenderProvider).sendToHouse(
+                houseId: authState.houseId!,
+                title: 'Pembayaran Sewa',
+                body: 'Seorang anggota melakukan pembayaran sewa.',
+              );
             }
             ref.invalidate(rentHistoryProvider);
             if (ctx.mounted) Navigator.pop(ctx);

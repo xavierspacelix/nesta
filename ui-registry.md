@@ -199,3 +199,47 @@ Last updated: 2026-06-17
 
 **Pattern notes:**
 Status cards are full-width with matching background tint and border. Proof image uses AuthImage widget with rounded corners.
+
+## Version Detail Screen
+
+File: `lib/features/version/screens/version_detail_screen.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Section bg       | AppTheme.neutral50             |
+| Section radius   | BorderRadius.circular(16)      |
+| App icon bg      | AppTheme.primary, borderRadius: 18, size: 64 |
+| App icon         | 32, white                      |
+| Version label    | FontWeight.w700, fontSize: 20  |
+| Version subtitle | fontSize: 14, color: neutral500 |
+| Changelog bg     | AppTheme.neutral50             |
+| Changelog radius | BorderRadius.circular(12)      |
+| Version badge    | primary, borderRadius: 100, padding: sym(h: 8, v: 3) |
+| Version badge txt| fontSize: 11, fontWeight: w700, white |
+
+**Pattern notes:**
+Two-section layout: app info card (neutral bg) at top, changelog section below. Changelog items use neutral600 text with 1.5 line height. Version badge is a small pill with primary color.
+
+## Update Dialog
+
+File: `lib/core/widgets/update_dialog.dart`
+Last updated: 2026-06-17
+
+| Property         | Value                          |
+| ---------------- | ------------------------------ |
+| Dialog radius    | BorderRadius.circular(24)      |
+| Title icon       | 28, force: error, optional: primary |
+| Title text       | FontWeight.w700, fontSize: 18  |
+| Content spacing  | 16 (between major blocks)      |
+| Changelog bg     | AppTheme.neutral50             |
+| Changelog radius | BorderRadius.circular(12)      |
+| Changelog text   | fontSize: 13, neutral600/neutral800, height: 1.4 |
+| Progress bar     | 6px height, primary, borderRadius: 100 |
+| Info banner bg   | warning.withOpacity(0.1), borderRadius: 12 |
+| Error banner bg  | error.withOpacity(0.1), borderRadius: 12 |
+| Button height    | (default)                      |
+| Button radius    | BorderRadius.circular(12)      |
+
+**Pattern notes:**
+AlertDialog with PopScope for forced updates. Download progress shown with LinearProgressIndicator. Error/warning messages shown in tinted containers. Actions change statefully: download → open settings → install.
